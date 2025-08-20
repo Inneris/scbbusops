@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBP Operations Dashboard - PRODUCTION READY</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+        }
+
+        .production-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4rem;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.degraded {
+            background: #ffc107;
+        }
+
+        .status-indicator.offline {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .refresh-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+            min-width: 80px;
+        }
+
+        .refresh-btn:hover {
+            background: #0056b3;
+        }
+
+        .refresh-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .last-updated {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-top: 12px;
+            text-align: right;
+        }
+
+        .enhanced-route-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+
+        .enhanced-route-table th,
+        .enhanced-route-table td {
+            padding: 10px 6px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+        }
+
+        .enhanced-route-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+            position: sticky;
+            top: 0;
+            font-size: 0.8rem;
+        }
+
+        .route-id {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 0.9rem;
+        }
+
+        .route-path {
+            color: #6c757d;
+            font-size: 0.8rem;
+            line-height: 1.3;
+        }
+
+        .route-time {
+            font-weight: 600;
+            color: #28a745;
+            font-size: 0.9rem;
+        }
+
+        .visual-cues {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 140px;
+            font-size: 0.75rem;
+        }
+
+        .rain-section {
+            margin-bottom: 4px;
+        }
+
+        .rain-info {
+            font-size: 0.65rem;
+            color: #6c757d;
+            margin-bottom: 2px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .rain-bar {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 3px;
+        }
+
+        .rain-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .forecast-section {
+            margin: 4px 0;
+        }
+
+        .forecast-label {
+            font-size: 0.65rem;
+            color: #6c757d;
+            margin-bottom: 2px;
+        }
+
+        .forecast-icons {
+            display: flex;
+            gap: 2px;
+        }
+
+        .forecast-icon {
+            font-size: 14px;
+            padding: 1px 2px;
+            border-radius: 2px;
+            background: rgba(0,0,0,0.05);
+            cursor: help;
+            position: relative;
+        }
+
+        .traffic-section {
+            margin-top: 4px;
+        }
+
+        .traffic-info {
+            font-size: 0.65rem;
+            color: #6c757d;
+            margin-bottom: 2px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .traffic-bar {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .traffic-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .delay-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 40px;
+        }
+
+        .delay-low { background: #d4edda; color: #155724; }
+        .delay-medium { background: #fff3cd; color: #856404; }
+        .delay-high { background: #f8d7da; color: #721c24; }
+
+        .location-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .location-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            border-left: 4px solid #dee2e6;
+            position: relative;
+        }
+
+        .location-name {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .location-metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .metric-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+
+        .metric-label {
+            color: #6c757d;
+            min-width: 50px;
+        }
+
+        .metric-value {
+            font-weight: 500;
+        }
+
+        .mini-bar {
+            height: 4px;
+            border-radius: 2px;
+            margin-top: 4px;
+        }
+
+        .corridor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .corridor-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            position: relative;
+        }
+
+        .corridor-name {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+            line-height: 1.2;
+        }
+
+        .corridor-direction {
+            font-size: 0.7rem;
+            color: #6c757d;
+            margin-bottom: 6px;
+            font-style: italic;
+        }
+
+        .corridor-speed {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .corridor-status {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .speed-smooth { color: #28a745; }
+        .speed-moderate { color: #ffc107; }
+        .speed-heavy { color: #dc3545; }
+        .speed-jam { color: #7f1d1d; }
+
+        .corridor-priority {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            font-size: 0.6rem;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .priority-high {
+            background: #dc3545;
+            color: white;
+        }
+
+        .priority-medium {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .data-source {
+            position: absolute;
+            bottom: 4px;
+            right: 6px;
+            font-size: 0.6rem;
+            color: #6c757d;
+            background: rgba(255,255,255,0.7);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+
+        .loading {
+            color: #6c757d;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .error {
+            color: #721c24;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+
+        .no-data {
+            color: #6c757d;
+            text-align: center;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .alert-item {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+
+        .alert-high {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .alert-medium {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .alert-low {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+
+        .operational-note {
+            background: #e7f3ff;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: #0c5460;
+        }
+
+        .traffic-logic-note {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 6px;
+            margin-top: 6px;
+            font-size: 0.7rem;
+            color: #856404;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            z-index: 1000;
+        }
+
+        .connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .global-controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .refresh-all-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+            font-weight: 600;
+        }
+
+        .refresh-all-btn:hover {
+            background: #218838;
+        }
+
+        .refresh-all-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .tooltip:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 117%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: rgba(0,0,0,0.9);
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .visual-cues {
+                min-width: 100px;
+            }
+
+            .location-grid,
+            .corridor-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .enhanced-route-table {
+                font-size: 0.8rem;
+            }
+
+            .enhanced-route-table th,
+            .enhanced-route-table td {
+                padding: 6px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="connectionStatus" class="connection-status disconnected">
+        ⚠️ Checking Connection...
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🚌 CBP Operations Dashboard</h1>
+            <p>Production-ready transport intelligence with verified data sources</p>
+            <div class="production-badge">Production Ready v3.0</div>
+        </div>
+
+        <div class="global-controls">
+            <button class="refresh-all-btn" onclick="refreshAll()" id="refreshAllBtn">
+                🔄 Refresh All Data
+            </button>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- System Status -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>
+                        <span class="status-indicator" id="statusIndicator"></span>
+                        📊 System Status
+                    </h2>
+                    <button class="refresh-btn" onclick="refreshData('status')" id="statusBtn">Refresh</button>
+                </div>
+                <div class="location-grid">
+                    <div class="location-item">
+                        <div class="location-name">API Services</div>
+                        <div class="location-metrics" id="apiStatus">
+                            <div class="metric-row">
+                                <span class="metric-label">LTA:</span>
+                                <span class="metric-value">--</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">NEA:</span>
+                                <span class="metric-value">--</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-label">Weather:</span>
+                                <span class="metric-value">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="last-updated" id="statusTime"></div>
+            </div>
+
+            <!-- Enhanced Morning Routes -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🌅 Morning Routes (To CBP)</h2>
+                    <button class="refresh-btn" onclick="refreshData('morning')" id="morningBtn">Refresh</button>
+                </div>
+                <div id="morningRoutesTable"></div>
+                <div id="morningTrafficNote"></div>
+                <div class="last-updated" id="morningTime"></div>
+            </div>
+
+            <!-- Enhanced Evening Routes -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🌆 Evening Routes (From CBP)</h2>
+                    <button class="refresh-btn" onclick="refreshData('evening')" id="eveningBtn">Refresh</button>
+                </div>
+                <div id="eveningRoutesTable"></div>
+                <div id="eveningTrafficNote"></div>
+                <div class="last-updated" id="eveningTime"></div>
+            </div>
+
+            <!-- Bidirectional Traffic by Corridor -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🛣️ Traffic by Corridor (Bidirectional)</h2>
+                    <button class="refresh-btn" onclick="refreshData('trafficCorridors')" id="trafficCorridorsBtn">Refresh</button>
+                </div>
+                <div class="corridor-grid" id="trafficCorridorGrid"></div>
+                <div class="operational-note" id="trafficOperationalNote"></div>
+                <div class="last-updated" id="trafficCorridorsTime"></div>
+            </div>
+
+            <!-- Location-Based Rainfall -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🌧️ Rainfall by Location</h2>
+                    <button class="refresh-btn" onclick="refreshData('rainLocations')" id="rainLocationsBtn">Refresh</button>
+                </div>
+                <div class="location-grid" id="rainLocationGrid"></div>
+                <div class="last-updated" id="rainLocationsTime"></div>
+            </div>
+
+            <!-- Location-Based Weather Forecast -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🌤️ Weather Forecast</h2>
+                    <button class="refresh-btn" onclick="refreshData('forecastLocations')" id="forecastLocationsBtn">Refresh</button>
+                </div>
+                <div class="location-grid" id="forecastLocationGrid"></div>
+                <div class="operational-note">
+                    <strong>Time Indicators:</strong> Now, +3h, +6h, +9h (next 12 hours in 3-hour intervals)
+                </div>
+                <div class="last-updated" id="forecastLocationsTime"></div>
+            </div>
+
+            <!-- Enhanced Alerts -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🚨 Active Alerts</h2>
+                    <button class="refresh-btn" onclick="refreshData('alerts')" id="alertsBtn">Refresh</button>
+                </div>
+                <div id="alertsList"></div>
+                <div class="last-updated" id="alertsTime"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ✅ Updated BASE_URL to your deployed Cloudflare Worker
+        const BASE_URL = 'https://cbp-ops-api.o-shanneng.workers.dev';
+        
+        const endpoints = {
+            'status': '/status',
+            'morning': '/routes/morning', 
+            'evening': '/routes/evening',
+            'rain': '/rain',
+            'rainLocations': '/rain/locations',
+            'forecast': '/forecast',
+            'forecastLocations': '/forecast/locations',
+            'trafficCorridors': '/traffic/corridors',
+            'alerts': '/alerts',
+            'expressway': '/expressway'
+        };
+
+        let isConnected = false;
+
+        async function fetchData(endpoint) {
+            try {
+                console.log(`Fetching ${endpoint} from ${BASE_URL + endpoints[endpoint]}...`);
+                
+                const response = await fetch(BASE_URL + endpoints[endpoint], {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log(`✅ ${endpoint} data received:`, data);
+                
+                isConnected = true;
+                updateConnectionStatus();
+                return data;
+            } catch (error) {
+                console.error(`❌ Error fetching ${endpoint}:`, error);
+                isConnected = false;
+                updateConnectionStatus();
+                throw error;
+            }
+        }
+
+        function updateConnectionStatus() {
+            const status = document.getElementById('connectionStatus');
+            if (isConnected) {
+                status.className = 'connection-status connected';
+                status.textContent = '✅ Connected to API';
+            } else {
+                status.className = 'connection-status disconnected';
+                status.textContent = '⚠️ API Connection Error';
+            }
+        }
+
+        function createRainBar(rainData) {
+            if (!rainData) return '<div class="no-data">No rain data</div>';
+            
+            const maxRain = 20;
+            const percentage = Math.min((rainData.rainfall / maxRain) * 100, 100);
+            
+            return `
+                <div class="rain-section">
+                    <div class="rain-info">
+                        <span>${rainData.description || 'No Rain'}</span>
+                        <span>${rainData.rainfall?.toFixed(1) || '0.0'}mm/h</span>
+                    </div>
+                    <div class="rain-bar tooltip" data-tooltip="Station ${rainData.stationId}: ${rainData.rainfall?.toFixed(1) || '0'} mm/h ${rainData.stationFound ? '✅' : '❌'}">
+                        <div class="rain-bar-fill" style="width: ${percentage}%; background-color: ${rainData.color || '#e9ecef'};"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createForecastIcons(forecastArray) {
+            if (!forecastArray || forecastArray.length === 0) {
+                return '<div class="no-data">No forecast</div>';
+            }
+            
+            return `
+                <div class="forecast-section">
+                    <div class="forecast-label">Next 12h:</div>
+                    <div class="forecast-icons">
+                        ${forecastArray.slice(0, 4).map((item, index) => 
+                            `<span class="forecast-icon tooltip" data-tooltip="${item.timeLabel || `+${index*3}h`}: ${item.temp || 'N/A'}°C - ${item.description || item.condition}">${item.icon || '🌤️'}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function createTrafficBar(trafficData) {
+            if (!trafficData) return '<div class="no-data">No traffic data</div>';
+            
+            const percentage = (trafficData.intensity || 0.5) * 100;
+            
+            return `
+                <div class="traffic-section">
+                    <div class="traffic-info">
+                        <span>${trafficData.description || 'Unknown'}</span>
+                        <span>${trafficData.speed || 'N/A'} km/h</span>
+                    </div>
+                    <div class="traffic-bar tooltip" data-tooltip="${trafficData.speed || 'N/A'} km/h - ${trafficData.description || 'Unknown'} (${trafficData.dataSource || 'Unknown'})">
+                        <div class="traffic-bar-fill" style="width: ${percentage}%; background-color: ${trafficData.color || '#f59e0b'};"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatEnhancedRouteTable(data, containerId, isEvening = false) {
+            const container = document.getElementById(containerId);
+            const noteContainer = document.getElementById(containerId.replace('Table', 'Note'));
+            
+            if (!data) {
+                container.innerHTML = '<div class="error">Error loading route data - check API connection</div>';
+                return;
+            }
+            
+            const routes = data.routes || data;
+            
+            if (!routes || routes.length === 0) {
+                container.innerHTML = '<div class="no-data">No routes available</div>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'enhanced-route-table';
+            
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Route</th>
+                        <th>Path</th>
+                        <th>Time</th>
+                        <th>Conditions</th>
+                        <th>Delay</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${routes.map(route => {
+                        const delay = route.delay || 0;
+                        const delayClass = delay <= 15 ? 'delay-low' : 
+                                         delay <= 30 ? 'delay-medium' : 'delay-high';
+                        
+                        return `
+                            <tr>
+                                <td><span class="route-id">${route.id}</span></td>
+                                <td>
+                                    <div class="route-path">${route.from}</div>
+                                    <div class="route-path">↓</div>
+                                    <div class="route-path">${route.to}</div>
+                                </td>
+                                <td><span class="route-time">${route.time}</span></td>
+                                <td>
+                                    <div class="visual-cues">
+                                        ${createRainBar(route.rain)}
+                                        ${createForecastIcons(route.forecast)}
+                                        ${createTrafficBar(route.traffic)}
+                                    </div>
+                                </td>
+                                <td><span class="delay-badge ${delayClass}">${delay}min</span></td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            `;
+            
+            container.innerHTML = '';
+            container.appendChild(table);
+            
+            // Add operational notes
+            if (noteContainer && data.trafficLogic) {
+                let noteText = data.trafficLogic;
+                if (data.operationalNote) {
+                    noteText += ` • ${data.operationalNote}`;
+                }
+                noteContainer.innerHTML = `<div class="traffic-logic-note"><strong>Traffic Logic:</strong> ${noteText}</div>`;
+            }
+            
+            // Show data quality info
+            if (data.dataQuality) {
+                const qualityInfo = document.createElement('div');
+                qualityInfo.className = 'operational-note';
+                qualityInfo.innerHTML = `<strong>Data Sources:</strong> Rain(${data.dataQuality.rain}), Forecast(${data.dataQuality.forecast}), Traffic(${data.dataQuality.traffic})`;
+                container.appendChild(qualityInfo);
+            }
+        }
+
+        function formatLocationRainGrid(data) {
+            const container = document.getElementById('rainLocationGrid');
+            
+            if (!data) {
+                container.innerHTML = '<div class="error">Error loading rainfall data - check API connection</div>';
+                return;
+            }
+            
+            const locations = data.locations || data;
+            
+            if (!locations || Object.keys(locations).length === 0) {
+                container.innerHTML = '<div class="no-data">No rainfall data available</div>';
+                return;
+            }
+
+            container.innerHTML = Object.entries(locations).map(([location, data]) => `
+                <div class="location-item" style="border-left-color: ${data.color || '#dee2e6'};">
+                    <div class="location-name">${location}</div>
+                    <div class="location-metrics">
+                        <div class="metric-row">
+                            <span class="metric-label">Rain:</span>
+                            <span class="metric-value">${data.rainfall?.toFixed(1) || '0.0'} mm/h</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Level:</span>
+                            <span class="metric-value" style="color: ${data.color || '#6c757d'};">${data.level || 'Unknown'}</span>
+                        </div>
+                        <div class="mini-bar" style="background: linear-gradient(to right, ${data.color || '#e9ecef'} ${(data.intensity || 0) * 100}%, #e9ecef ${(data.intensity || 0) * 100}%);"></div>
+                        ${data.stationId ? `<div style="font-size: 0.6rem; color: #6c757d; margin-top: 4px;">Station: ${data.stationId} ${data.stationFound ? '✅' : '❌'}${data.fallback ? ' (Fallback)' : ''}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatLocationForecastGrid(data) {
+            const container = document.getElementById('forecastLocationGrid');
+            
+            if (!data) {
+                container.innerHTML = '<div class="error">Error loading forecast data - check API connection and keys</div>';
+                return;
+            }
+            
+            const locations = data.locations || data;
+            
+            if (!locations || Object.keys(locations).length === 0) {
+                container.innerHTML = '<div class="no-data">No forecast data available</div>';
+                return;
+            }
+
+            container.innerHTML = Object.entries(locations).map(([location, data]) => `
+                <div class="location-item">
+                    <div class="location-name">${location}</div>
+                    <div class="location-metrics">
+                        ${data.hourly && data.hourly.length > 0 ? `
+                            <div class="metric-row">
+                                <span class="metric-label">Now:</span>
+                                <span class="metric-value">${data.hourly[0].icon || '🌤️'} ${data.hourly[0].temp || 'N/A'}°C</span>
+                            </div>
+                            <div class="forecast-icons">
+                                ${data.hourly.slice(0, 4).map(item => 
+                                    `<span class="forecast-icon tooltip" data-tooltip="${item.timeLabel || 'Now'}: ${item.temp || 'N/A'}°C">${item.icon || '🌤️'}</span>`
+                                ).join('')}
+                            </div>
+                        ` : '<div class="metric-row"><span class="metric-value">No data available</span></div>'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatTrafficCorridorGrid(data) {
+            const container = document.getElementById('trafficCorridorGrid');
+            const noteContainer = document.getElementById('trafficOperationalNote');
+            
+            if (!data) {
+                container.innerHTML = '<div class="error">Error loading traffic data - check API connection and keys</div>';
+                return;
+            }
+            
+            const corridors = data.corridors || data;
+            
+            if (!corridors || Object.keys(corridors).length === 0) {
+                container.innerHTML = '<div class="no-data">No traffic data available</div>';
+                return;
+            }
+
+            // Sort corridors: To CBP first, then From CBP
+            const sortedCorridors = Object.entries(corridors).sort(([a], [b]) => {
+                if (a.includes('To CBP') && !b.includes('To CBP')) return -1;
+                if (!a.includes('To CBP') && b.includes('To CBP')) return 1;
+                return a.localeCompare(b);
+            });
+
+            container.innerHTML = sortedCorridors.map(([corridor, data]) => `
+                <div class="corridor-item">
+                    <div class="corridor-priority priority-${data.priority || 'medium'}">${(data.priority || 'medium').toUpperCase()}</div>
+                    <div class="corridor-name">${corridor}</div>
+                    <div class="corridor-direction">${data.direction || ''}</div>
+                    <div class="corridor-speed speed-${data.level || 'moderate'}">${data.speed || 'N/A'} km/h</div>
+                    <div class="corridor-status speed-${data.level || 'moderate'}">${(data.level || 'moderate').toUpperCase()}</div>
+                    <div style="margin-top: 8px;">${createTrafficBar(data)}</div>
+                    <div class="data-source">${data.dataSource || 'Unknown'}</div>
+                    <div style="font-size: 0.65rem; color: #6c757d; margin-top: 4px;">${data.relevantFor || ''}</div>
+                </div>
+            `).join('');
+
+            // Add operational note
+            if (noteContainer) {
+                let noteText = '';
+                if (data.rushHourActive) {
+                    noteText += `🚨 <strong>${data.rushHourType}</strong> - Traffic patterns actively monitored. `;
+                }
+                noteText += 'Bidirectional monitoring shows both inbound (To CBP) and outbound (From CBP) traffic conditions.';
+                if (data.sources) {
+                    noteText += ` Data sources: ${data.sources.join(', ')}.`;
+                }
+                noteContainer.innerHTML = noteText;
+            }
+        }
+
+        function formatAlerts(alerts) {
+            const container = document.getElementById('alertsList');
+            if (!alerts || alerts.length === 0) {
+                container.innerHTML = '<div class="no-data">No active alerts</div>';
+                return;
+            }
+
+            container.innerHTML = alerts.map(alert => `
+                <div class="alert-item alert-${alert.priority}">
+                    <strong>[${alert.priority.toUpperCase()}]</strong> ${alert.message}
+                    <br><small>${new Date(alert.time).toLocaleString()} • ${alert.type}</small>
+                </div>
+            `).join('');
+        }
+
+        function updateSystemStatusStats(data) {
+            const container = document.getElementById('apiStatus');
+            if (!data) return;
+
+            container.innerHTML = `
+                <div class="metric-row">
+                    <span class="metric-label">LTA:</span>
+                    <span class="metric-value" style="color: ${data.lta === 'Online' ? '#28a745' : '#dc3545'};">${data.lta || '--'}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">NEA:</span>
+                    <span class="metric-value" style="color: ${data.nea === 'Online' ? '#28a745' : '#dc3545'};">${data.nea || '--'}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Weather:</span>
+                    <span class="metric-value" style="color: ${data.openWeather === 'Online' ? '#28a745' : '#dc3545'};">${data.openWeather || '--'}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Version:</span>
+                    <span class="metric-value">${data.version || '3.0'}</span>
+                </div>
+                ${data.operationalStatus ? `
+                <div class="metric-row">
+                    <span class="metric-label">Status:</span>
+                    <span class="metric-value" style="color: #28a745;">${data.operationalStatus}</span>
+                </div>
+                ` : ''}
+                ${data.environment ? `
+                <div class="metric-row">
+                    <span class="metric-label">Env:</span>
+                    <span class="metric-value" style="color: #007bff;">${data.environment}</span>
+                </div>
+                ` : ''}
+            `;
+        }
+
+        async function refreshData(type) {
+            const btnElement = document.getElementById(type + 'Btn');
+            const timeElement = document.getElementById(type + 'Time');
+            
+            if (!btnElement || !timeElement) {
+                console.error(`Missing elements for ${type}`);
+                return;
+            }
+            
+            btnElement.disabled = true;
+            btnElement.textContent = 'Loading...';
+            
+            try {
+                const data = await fetchData(type);
+                
+                if (type === 'morning') {
+                    formatEnhancedRouteTable(data, 'morningRoutesTable', false);
+                } else if (type === 'evening') {
+                    formatEnhancedRouteTable(data, 'eveningRoutesTable', true);
+                } else if (type === 'alerts') {
+                    formatAlerts(data);
+                } else if (type === 'status') {
+                    updateSystemStatusStats(data);
+                    const indicator = document.getElementById('statusIndicator');
+                    if (indicator) {
+                        const allOnline = data.lta === 'Online' && data.nea === 'Online' && data.openWeather === 'Online';
+                        indicator.className = allOnline ? 'status-indicator' : 
+                                            (data.lta === 'Online' || data.nea === 'Online') ? 'status-indicator degraded' : 'status-indicator offline';
+                    }
+                } else if (type === 'rainLocations') {
+                    formatLocationRainGrid(data);
+                } else if (type === 'forecastLocations') {
+                    formatLocationForecastGrid(data);
+                } else if (type === 'trafficCorridors') {
+                    formatTrafficCorridorGrid(data);
+                }
+                
+                timeElement.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                
+            } catch (error) {
+                console.error(`Error refreshing ${type}:`, error);
+                timeElement.textContent = `Error at: ${new Date().toLocaleTimeString()}`;
+                
+                const errorContainers = {
+                    'morning': 'morningRoutesTable',
+                    'evening': 'eveningRoutesTable',
+                    'rainLocations': 'rainLocationGrid',
+                    'forecastLocations': 'forecastLocationGrid',
+                    'trafficCorridors': 'trafficCorridorGrid',
+                    'alerts': 'alertsList'
+                };
+                
+                const containerId = errorContainers[type];
+                if (containerId) {
+                    const container = document.getElementById(containerId);
+                    if (container) {
+                        container.innerHTML = `<div class="error">Error: ${error.message}<br><small>Check BASE_URL configuration and API keys</small></div>`;
+                    }
+                }
+                
+                if (type === 'status') {
+                    const indicator = document.getElementById('statusIndicator');
+                    if (indicator) {
+                        indicator.className = 'status-indicator offline';
+                    }
+                }
+            } finally {
+                btnElement.disabled = false;
+                btnElement.textContent = 'Refresh';
+            }
+        }
+
+        function startAutoRefresh() {
+            setInterval(() => {
+                console.log('Auto-refreshing dashboard data...');
+                const types = ['status', 'morning', 'evening', 'rainLocations', 'forecastLocations', 'trafficCorridors', 'alerts'];
+                types.forEach((type, index) => {
+                    setTimeout(() => refreshData(type), index * 1000); // Stagger requests
+                });
+            }, 5 * 60 * 1000); // 5 minutes
+        }
+
+        function refreshAll() {
+            const btn = document.getElementById('refreshAllBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Refreshing All...';
+            
+            const types = ['status', 'morning', 'evening', 'rainLocations', 'forecastLocations', 'trafficCorridors', 'alerts'];
+            
+            let index = 0;
+            function refreshNext() {
+                if (index < types.length) {
+                    refreshData(types[index])
+                        .finally(() => {
+                            index++;
+                            setTimeout(refreshNext, 800); // 800ms between requests
+                        });
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = '🔄 Refresh All Data';
+                    console.log('✅ All dashboard data refreshed');
+                }
+            }
+            
+            refreshNext();
+        }
+
+        // Initialize dashboard
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 CBP Operations Dashboard v3.0 (Production) initializing...');
+            console.log(`Using API: ${BASE_URL}`);
+            
+            refreshAll();
+            
+            // Start auto-refresh after initial load
+            setTimeout(() => {
+                console.log('🔄 Starting auto-refresh every 5 minutes...');
+                startAutoRefresh();
+            }, 30000);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                e.preventDefault();
+                refreshAll();
+            }
+        });
+
+        // Debug helper for troubleshooting
+        window.debugDashboard = {
+            fetchData: fetchData,
+            endpoints: endpoints,
+            BASE_URL: BASE_URL,
+            refreshData: refreshData,
+            testConnection: () => {
+                console.log(`Testing connection to: ${BASE_URL}/status`);
+                fetchData('status').then(data => {
+                    console.log('✅ Connection successful:', data);
+                }).catch(err => {
+                    console.error('❌ Connection failed:', err);
+                });
+            }
+        };
+
+        console.log('🔧 Debug: Use debugDashboard.testConnection() to test API connection');
+    </script>
+</body>
+</html>
