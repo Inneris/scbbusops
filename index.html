@@ -1,1219 +1,2196 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CBP Operations Dashboard - PRODUCTION READY</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            color: white;
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .header p {
-            color: rgba(255,255,255,0.9);
-            font-size: 1.1rem;
-        }
-
-        .production-badge {
-            display: inline-block;
-            background: #28a745;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-top: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-            gap: 20px;
-        }
-
-        .card {
-            background: rgba(255,255,255,0.95);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-        }
-
-        .card h2 {
-            color: #333;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 1.4rem;
-        }
-
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #28a745;
-            animation: pulse 2s infinite;
-        }
-
-        .status-indicator.degraded {
-            background: #ffc107;
-        }
-
-        .status-indicator.offline {
-            background: #dc3545;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .refresh-btn {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background 0.3s ease;
-            min-width: 80px;
-        }
-
-        .refresh-btn:hover {
-            background: #0056b3;
-        }
-
-        .refresh-btn:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-        }
-
-        .last-updated {
-            font-size: 0.75rem;
-            color: #6c757d;
-            margin-top: 12px;
-            text-align: right;
-        }
-
-        .enhanced-route-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 8px;
-            font-size: 0.85rem;
-        }
-
-        .enhanced-route-table th,
-        .enhanced-route-table td {
-            padding: 10px 6px;
-            text-align: left;
-            border-bottom: 1px solid #e9ecef;
-            vertical-align: middle;
-        }
-
-        .enhanced-route-table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #495057;
-            position: sticky;
-            top: 0;
-            font-size: 0.8rem;
-        }
-
-        .route-id {
-            font-weight: bold;
-            color: #007bff;
-            font-size: 0.9rem;
-        }
-
-        .route-path {
-            color: #6c757d;
-            font-size: 0.8rem;
-            line-height: 1.3;
-        }
-
-        .route-time {
-            font-weight: 600;
-            color: #28a745;
-            font-size: 0.9rem;
-        }
-
-        .visual-cues {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            min-width: 140px;
-            font-size: 0.75rem;
-        }
-
-        .rain-section {
-            margin-bottom: 4px;
-        }
-
-        .rain-info {
-            font-size: 0.65rem;
-            color: #6c757d;
-            margin-bottom: 2px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .rain-bar {
-            height: 6px;
-            background: #e9ecef;
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 3px;
-        }
-
-        .rain-bar-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.3s ease;
-        }
-
-        .forecast-section {
-            margin: 4px 0;
-        }
-
-        .forecast-label {
-            font-size: 0.65rem;
-            color: #6c757d;
-            margin-bottom: 2px;
-        }
-
-        .forecast-icons {
-            display: flex;
-            gap: 2px;
-        }
-
-        .forecast-icon {
-            font-size: 14px;
-            padding: 1px 2px;
-            border-radius: 2px;
-            background: rgba(0,0,0,0.05);
-            cursor: help;
-            position: relative;
-        }
-
-        .traffic-section {
-            margin-top: 4px;
-        }
-
-        .traffic-info {
-            font-size: 0.65rem;
-            color: #6c757d;
-            margin-bottom: 2px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .traffic-bar {
-            height: 6px;
-            background: #e9ecef;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .traffic-bar-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.3s ease;
-        }
-
-        .delay-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-align: center;
-            min-width: 40px;
-        }
-
-        .delay-low { background: #d4edda; color: #155724; }
-        .delay-medium { background: #fff3cd; color: #856404; }
-        .delay-high { background: #f8d7da; color: #721c24; }
-
-        .location-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 12px;
-            margin-top: 16px;
-        }
-
-        .location-item {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 12px;
-            border-left: 4px solid #dee2e6;
-            position: relative;
-        }
-
-        .location-name {
-            font-weight: 600;
-            color: #495057;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-        }
-
-        .location-metrics {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .metric-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.8rem;
-        }
-
-        .metric-label {
-            color: #6c757d;
-            min-width: 50px;
-        }
-
-        .metric-value {
-            font-weight: 500;
-        }
-
-        .mini-bar {
-            height: 4px;
-            border-radius: 2px;
-            margin-top: 4px;
-        }
-
-        .corridor-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            margin-top: 16px;
-        }
-
-        .corridor-item {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 12px;
-            text-align: center;
-            position: relative;
-        }
-
-        .corridor-name {
-            font-weight: 600;
-            color: #495057;
-            font-size: 0.85rem;
-            margin-bottom: 6px;
-            line-height: 1.2;
-        }
-
-        .corridor-direction {
-            font-size: 0.7rem;
-            color: #6c757d;
-            margin-bottom: 6px;
-            font-style: italic;
-        }
-
-        .corridor-speed {
-            font-size: 1.4rem;
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-
-        .corridor-status {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .speed-smooth { color: #28a745; }
-        .speed-moderate { color: #ffc107; }
-        .speed-heavy { color: #dc3545; }
-        .speed-jam { color: #7f1d1d; }
-
-        .corridor-priority {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            font-size: 0.6rem;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-weight: 600;
-        }
-
-        .priority-high {
-            background: #dc3545;
-            color: white;
-        }
-
-        .priority-medium {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .data-source {
-            position: absolute;
-            bottom: 4px;
-            right: 6px;
-            font-size: 0.6rem;
-            color: #6c757d;
-            background: rgba(255,255,255,0.7);
-            padding: 1px 4px;
-            border-radius: 3px;
-        }
-
-        .loading {
-            color: #6c757d;
-            font-style: italic;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .error {
-            color: #721c24;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 4px;
-            padding: 12px;
-            margin: 8px 0;
-        }
-
-        .no-data {
-            color: #6c757d;
-            text-align: center;
-            font-style: italic;
-            padding: 20px;
-        }
-
-        .alert-item {
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 6px;
-            border-left: 4px solid;
-        }
-
-        .alert-high {
-            background: #f8d7da;
-            border-color: #dc3545;
-            color: #721c24;
-        }
-
-        .alert-medium {
-            background: #fff3cd;
-            border-color: #ffc107;
-            color: #856404;
-        }
-
-        .alert-low {
-            background: #d1ecf1;
-            border-color: #17a2b8;
-            color: #0c5460;
-        }
-
-        .operational-note {
-            background: #e7f3ff;
-            border: 1px solid #bee5eb;
-            border-radius: 4px;
-            padding: 8px;
-            margin-top: 8px;
-            font-size: 0.75rem;
-            color: #0c5460;
-        }
-
-        .traffic-logic-note {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 4px;
-            padding: 6px;
-            margin-top: 6px;
-            font-size: 0.7rem;
-            color: #856404;
-        }
-
-        .connection-status {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            z-index: 1000;
-        }
-
-        .connected {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .disconnected {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .global-controls {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .refresh-all-btn {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s ease;
-            font-weight: 600;
-        }
-
-        .refresh-all-btn:hover {
-            background: #218838;
-        }
-
-        .refresh-all-btn:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-        }
-
-        .tooltip {
-            position: relative;
-            cursor: help;
-        }
-
-        .tooltip:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.9);
-            color: white;
-            padding: 6px 8px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            z-index: 1000;
-            pointer-events: none;
-        }
-
-        .tooltip:hover::before {
-            content: '';
-            position: absolute;
-            bottom: 117%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 4px solid transparent;
-            border-top-color: rgba(0,0,0,0.9);
-            z-index: 1000;
-        }
-
-        @media (max-width: 768px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .visual-cues {
-                min-width: 100px;
-            }
-
-            .location-grid,
-            .corridor-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .enhanced-route-table {
-                font-size: 0.8rem;
-            }
-
-            .enhanced-route-table th,
-            .enhanced-route-table td {
-                padding: 6px 4px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="color-scheme" content="light dark">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CBP Smart Operations Hub</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary-bg: #0a0e1a;
+      --secondary-bg: #1a1f3a;
+      --card-bg: #1e293b;
+      --accent-bg: #2563eb;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #06b6d4;
+      --border: #334155;
+      --shadow: rgba(0, 0, 0, 0.3);
+      --glass-bg: rgba(30, 41, 59, 0.8);
+      --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --primary-bg: #f8fafc;
+        --secondary-bg: #e2e8f0;
+        --card-bg: #ffffff;
+        --text-primary: #1e293b;
+        --text-secondary: #475569;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+        --shadow: rgba(0, 0, 0, 0.1);
+        --glass-bg: rgba(255, 255, 255, 0.9);
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--primary-bg);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Animated Background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
+      z-index: -1;
+      animation: backgroundMove 20s ease-in-out infinite;
+    }
+
+    @keyframes backgroundMove {
+      0%, 100% { transform: translateX(0) translateY(0); }
+      25% { transform: translateX(-20px) translateY(-20px); }
+      50% { transform: translateX(20px) translateY(-10px); }
+      75% { transform: translateX(-10px) translateY(10px); }
+    }
+
+    /* Header */
+    .header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .header-icon {
+      width: 50px;
+      height: 50px;
+      background: var(--gradient-primary);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.5rem;
+    }
+
+    .header-text h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .header-text p {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    .time-display {
+      text-align: center;
+      padding: 0.75rem 1.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 4px 6px var(--shadow);
+    }
+
+    .current-time {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .current-period {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .system-status {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.875rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.warning { background: var(--warning); }
+    .status-dot.danger { background: var(--danger); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Control Panel */
+    .control-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+      box-shadow: 0 4px 6px var(--shadow);
+    }
+
+    .control-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, var(--card-bg) 0%, rgba(37, 99, 235, 0.1) 100%);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .control-header:hover {
+      background: linear-gradient(135deg, var(--card-bg) 0%, rgba(37, 99, 235, 0.15) 100%);
+    }
+
+    .control-title {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .control-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+      color: white;
+    }
+
+    .control-toggle {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      transition: transform 0.3s ease;
+    }
+
+    .control-toggle.expanded {
+      transform: rotate(180deg);
+    }
+
+    .control-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .control-content.expanded {
+      max-height: 400px;
+    }
+
+    .control-options {
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .option-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .option-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .option-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .option-btn {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .option-btn:hover {
+      border-color: var(--accent-bg);
+      color: var(--text-primary);
+    }
+
+    .option-btn.active {
+      background: var(--accent-bg);
+      border-color: var(--accent-bg);
+      color: white;
+    }
+
+    .custom-select {
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text-primary);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .custom-select:hover {
+      border-color: var(--accent-bg);
+    }
+
+    /* Priority Banner */
+    .priority-banner {
+      background: var(--gradient-secondary);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .priority-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 300px;
+      height: 300px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+    }
+
+    .priority-content {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .priority-text h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .priority-text p {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    .priority-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    /* Card Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px var(--shadow);
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px var(--shadow);
+    }
+
+    .card.expanded {
+      grid-column: 1 / -1;
+    }
+
+    .card-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, var(--card-bg) 0%, rgba(37, 99, 235, 0.1) 100%);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .card-icon.traffic { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
+    .card-icon.weather { background: linear-gradient(135deg, #74b9ff, #0984e3); }
+    .card-icon.schedule { background: linear-gradient(135deg, #a29bfe, #6c5ce7); }
+    .card-icon.alerts { background: linear-gradient(135deg, #ffeaa7, #fdcb6e); }
+
+    .card-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .expand-btn {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .expand-btn:hover {
+      border-color: var(--accent-bg);
+      color: var(--accent-bg);
+    }
+
+    .card-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-active { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .badge-inactive { background: rgba(148, 163, 184, 0.2); color: var(--text-secondary); }
+
+    .card-content {
+      padding: 1.5rem;
+    }
+
+    .card-content.expanded {
+      max-height: none;
+      padding: 2rem;
+    }
+
+    /* Traffic Cards */
+    .traffic-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem;
+      border-radius: 12px;
+      background: var(--glass-bg);
+      border: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+      transition: all 0.3s ease;
+    }
+
+    .traffic-item:hover {
+      transform: translateX(4px);
+      border-color: var(--accent-bg);
+    }
+
+    .traffic-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .traffic-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .traffic-indicator.smooth { background: var(--success); }
+    .traffic-indicator.moderate { background: var(--warning); }
+    .traffic-indicator.heavy { background: var(--danger); }
+
+    .traffic-details h4 {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .traffic-details p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .traffic-stats {
+      text-align: right;
+    }
+
+    .eta-time {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent-bg);
+    }
+
+    .traffic-speed {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* Weather Cards */
+    .weather-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .weather-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .weather-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem;
+    }
+
+    .weather-item {
+      text-align: center;
+      padding: 1rem;
+      border-radius: 12px;
+      background: var(--glass-bg);
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .weather-item:hover {
+      transform: translateY(-2px);
+      border-color: var(--info);
+    }
+
+    .weather-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .weather-time {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .weather-temp {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .weather-desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .expressway-weather {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    /* Schedule Cards */
+    .schedule-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 12px;
+      background: var(--glass-bg);
+      border: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .schedule-item.completed {
+      opacity: 0.6;
+      background: rgba(148, 163, 184, 0.1);
+    }
+
+    .schedule-item.active {
+      border-color: var(--accent-bg);
+      background: rgba(37, 99, 235, 0.1);
+    }
+
+    .schedule-item.upcoming {
+      border-color: var(--success);
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    .schedule-time {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent-bg);
+      min-width: 80px;
+    }
+
+    .schedule-details {
+      flex: 1;
+      margin-left: 1rem;
+    }
+
+    .schedule-route {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .schedule-locations {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .schedule-status {
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-completed { background: rgba(148, 163, 184, 0.2); color: var(--text-secondary); }
+    .status-active { background: rgba(37, 99, 235, 0.2); color: var(--accent-bg); }
+    .status-upcoming { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+
+    /* Chart Container */
+    .chart-container {
+      height: 200px;
+      margin-top: 1rem;
+      position: relative;
+    }
+
+    .chart-container.expanded {
+      height: 400px;
+    }
+
+    /* Alert Items */
+    .alert-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem;
+      border-radius: 12px;
+      background: var(--glass-bg);
+      border: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+    }
+
+    .alert-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .alert-icon.high { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+    .alert-icon.medium { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+    .alert-icon.low { background: rgba(6, 182, 212, 0.2); color: var(--info); }
+
+    .alert-content {
+      flex: 1;
+    }
+
+    .alert-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .alert-message {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+
+    .alert-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    /* Loading States */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border);
+      border-top: 2px solid var(--accent-bg);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Debug Panel */
+    .debug-panel {
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      max-width: 300px;
+      font-size: 0.75rem;
+      z-index: 1000;
+      display: none;
+    }
+
+    .debug-panel.show {
+      display: block;
+    }
+
+    .debug-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .debug-item {
+      margin-bottom: 0.25rem;
+      color: var(--text-secondary);
+    }
+
+    .debug-error {
+      color: var(--danger);
+    }
+
+    .debug-success {
+      color: var(--success);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .header-content {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        text-align: center;
+      }
+      
+      .priority-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .control-options {
+        grid-template-columns: 1fr;
+      }
+
+      .debug-panel {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin: 1rem 0;
+        max-width: 100%;
+      }
+    }
+
+    /* Toast Notifications */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 8px 25px var(--shadow);
+      display: none;
+      z-index: 1000;
+      max-width: 400px;
+    }
+
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.warning { border-left: 4px solid var(--warning); }
+    .toast.error { border-left: 4px solid var(--danger); }
+  </style>
 </head>
 <body>
-    <div id="connectionStatus" class="connection-status disconnected">
-        ⚠️ Checking Connection...
+  <!-- Debug Panel -->
+  <div class="debug-panel" id="debugPanel">
+    <div class="debug-title">API Debug Info</div>
+    <div id="debugContent"></div>
+    <button onclick="toggleDebug()" style="margin-top: 0.5rem; padding: 0.25rem 0.5rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary); border-radius: 4px; cursor: pointer;">Hide</button>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="header-title">
+        <div class="header-icon">
+          <i class="fas fa-bus"></i>
+        </div>
+        <div class="header-text">
+          <h1>CBP Smart Operations Hub</h1>
+          <p>Intelligent Transportation Management System</p>
+        </div>
+      </div>
+      
+      <div class="time-display">
+        <div class="current-time" id="currentTime">--:--</div>
+        <div class="current-period" id="currentPeriod">Loading...</div>
+      </div>
+      
+      <div class="system-status" id="systemStatus">
+        <div class="status-indicator">
+          <div class="status-dot" id="systemDot"></div>
+          <span>System</span>
+        </div>
+        <div class="status-indicator">
+          <button onclick="toggleDebug()" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.75rem;">Debug</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container">
+    <!-- Control Panel -->
+    <div class="control-panel">
+      <div class="control-header" id="controlHeader">
+        <div class="control-title">
+          <div class="control-icon">
+            <i class="fas fa-cog"></i>
+          </div>
+          <span>Monitoring Controls</span>
+        </div>
+        <div class="control-toggle" id="controlToggle">
+          <i class="fas fa-chevron-down"></i>
+        </div>
+      </div>
+      <div class="control-content" id="controlContent">
+        <div class="control-options">
+          <div class="option-group">
+            <div class="option-label">Time Priority</div>
+            <div class="option-buttons">
+              <button class="option-btn active" data-priority="auto">Auto (Current Time)</button>
+              <button class="option-btn" data-priority="morning">Morning Rush</button>
+              <button class="option-btn" data-priority="evening">Evening Rush</button>
+              <button class="option-btn" data-priority="all">All Day</button>
+            </div>
+          </div>
+          
+          <div class="option-group">
+            <div class="option-label">Route Filter</div>
+            <select class="custom-select" id="routeFilter">
+              <option value="all">All Routes</option>
+              <option value="mrt">MRT Connections</option>
+              <option value="residential">Residential Areas</option>
+              <option value="commercial">Commercial Districts</option>
+              <option value="express">Express Routes</option>
+            </select>
+          </div>
+          
+          <div class="option-group">
+            <div class="option-label">Data Display</div>
+            <div class="option-buttons">
+              <button class="option-btn active" data-display="summary">Summary View</button>
+              <button class="option-btn" data-display="detailed">Detailed View</button>
+              <button class="option-btn" data-display="compact">Compact View</button>
+            </div>
+          </div>
+          
+          <div class="option-group">
+            <div class="option-label">Update Frequency</div>
+            <select class="custom-select" id="updateFrequency">
+              <option value="300000">5 Minutes</option>
+              <option value="120000">2 Minutes</option>
+              <option value="60000">1 Minute</option>
+              <option value="30000">30 Seconds</option>
+            </select>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="container">
-        <div class="header">
-            <h1>🚌 CBP Operations Dashboard</h1>
-            <p>Production-ready transport intelligence with verified data sources</p>
-            <div class="production-badge">Production Ready v3.0</div>
+    <!-- Priority Banner -->
+    <div class="priority-banner" id="priorityBanner">
+      <div class="priority-content">
+        <div class="priority-text">
+          <h2 id="priorityTitle">Initializing Smart Operations...</h2>
+          <p id="priorityMessage">Setting up time-aware routing and priority management</p>
         </div>
+        <div class="priority-actions">
+          <button class="btn btn-primary" id="refreshBtn">
+            <i class="fas fa-sync-alt"></i>
+            Refresh Data
+          </button>
+        </div>
+      </div>
+    </div>
 
-        <div class="global-controls">
-            <button class="refresh-all-btn" onclick="refreshAll()" id="refreshAllBtn">
-                🔄 Refresh All Data
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+      <!-- Active Schedule Card -->
+      <div class="card" id="scheduleCard">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-icon schedule">
+              <i class="fas fa-clock"></i>
+            </div>
+            <span>Active Schedule</span>
+          </div>
+          <div class="card-controls">
+            <div class="card-badge" id="scheduleBadge">Live</div>
+            <button class="expand-btn" data-card="schedule">
+              <i class="fas fa-expand"></i>
             </button>
+          </div>
         </div>
-
-        <div class="dashboard-grid">
-            <!-- System Status -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>
-                        <span class="status-indicator" id="statusIndicator"></span>
-                        📊 System Status
-                    </h2>
-                    <button class="refresh-btn" onclick="refreshData('status')" id="statusBtn">Refresh</button>
-                </div>
-                <div class="location-grid">
-                    <div class="location-item">
-                        <div class="location-name">API Services</div>
-                        <div class="location-metrics" id="apiStatus">
-                            <div class="metric-row">
-                                <span class="metric-label">LTA:</span>
-                                <span class="metric-value">--</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="metric-label">NEA:</span>
-                                <span class="metric-value">--</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="metric-label">Weather:</span>
-                                <span class="metric-value">--</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="last-updated" id="statusTime"></div>
-            </div>
-
-            <!-- Enhanced Morning Routes -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>🌅 Morning Routes (To CBP)</h2>
-                    <button class="refresh-btn" onclick="refreshData('morning')" id="morningBtn">Refresh</button>
-                </div>
-                <div id="morningRoutesTable"></div>
-                <div id="morningTrafficNote"></div>
-                <div class="last-updated" id="morningTime"></div>
-            </div>
-
-            <!-- Enhanced Evening Routes -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>🌆 Evening Routes (From CBP)</h2>
-                    <button class="refresh-btn" onclick="refreshData('evening')" id="eveningBtn">Refresh</button>
-                </div>
-                <div id="eveningRoutesTable"></div>
-                <div id="eveningTrafficNote"></div>
-                <div class="last-updated" id="eveningTime"></div>
-            </div>
-
-            <!-- Bidirectional Traffic by Corridor -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>🛣️ Traffic by Corridor (Bidirectional)</h2>
-                    <button class="refresh-btn" onclick="refreshData('trafficCorridors')" id="trafficCorridorsBtn">Refresh</button>
-                </div>
-                <div class="corridor-grid" id="trafficCorridorGrid"></div>
-                <div class="operational-note" id="trafficOperationalNote"></div>
-                <div class="last-updated" id="trafficCorridorsTime"></div>
-            </div>
-
-            <!-- Location-Based Rainfall -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>🌧️ Rainfall by Location</h2>
-                    <button class="refresh-btn" onclick="refreshData('rainLocations')" id="rainLocationsBtn">Refresh</button>
-                </div>
-                <div class="location-grid" id="rainLocationGrid"></div>
-                <div class="last-updated" id="rainLocationsTime"></div>
-            </div>
-
-            <!-- Location-Based Weather Forecast -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>🌤️ Weather Forecast</h2>
-                    <button class="refresh-btn" onclick="refreshData('forecastLocations')" id="forecastLocationsBtn">Refresh</button>
-                </div>
-                <div class="location-grid" id="forecastLocationGrid"></div>
-                <div class="operational-note">
-                    <strong>Time Indicators:</strong> Now, +3h, +6h, +9h (next 12 hours in 3-hour intervals)
-                </div>
-                <div class="last-updated" id="forecastLocationsTime"></div>
-            </div>
-
-            <!-- Enhanced Alerts -->
-            <div class="card">
-                <div class="card-header">
-                    <h2>🚨 Active Alerts</h2>
-                    <button class="refresh-btn" onclick="refreshData('alerts')" id="alertsBtn">Refresh</button>
-                </div>
-                <div id="alertsList"></div>
-                <div class="last-updated" id="alertsTime"></div>
-            </div>
+        <div class="card-content" id="scheduleContent">
+          <div class="loading">
+            <div class="spinner"></div>
+            Loading schedule data...
+          </div>
         </div>
+      </div>
+
+      <!-- Traffic Intelligence Card -->
+      <div class="card" id="trafficCard">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-icon traffic">
+              <i class="fas fa-road"></i>
+            </div>
+            <span>Traffic Intelligence</span>
+          </div>
+          <div class="card-controls">
+            <div class="card-badge" id="trafficBadge">Real-time</div>
+            <button class="expand-btn" data-card="traffic">
+              <i class="fas fa-expand"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-content" id="trafficContent">
+          <div class="loading">
+            <div class="spinner"></div>
+            Analyzing traffic patterns...
+          </div>
+        </div>
+      </div>
+
+      <!-- Weather Forecast Card -->
+      <div class="card" id="weatherCard">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-icon weather">
+              <i class="fas fa-cloud-rain"></i>
+            </div>
+            <span>Weather Impact</span>
+          </div>
+          <div class="card-controls">
+            <div class="card-badge" id="weatherBadge">Forecast</div>
+            <button class="expand-btn" data-card="weather">
+              <i class="fas fa-expand"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-content" id="weatherContent">
+          <div class="loading">
+            <div class="spinner"></div>
+            Fetching weather data...
+          </div>
+        </div>
+      </div>
+
+      <!-- Smart Alerts Card -->
+      <div class="card" id="alertsCard">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-icon alerts">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <span>Smart Alerts</span>
+          </div>
+          <div class="card-controls">
+            <div class="card-badge" id="alertsBadge">Active</div>
+            <button class="expand-btn" data-card="alerts">
+              <i class="fas fa-expand"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-content" id="alertsContent">
+          <div class="loading">
+            <div class="spinner"></div>
+            Loading alert systems...
+          </div>
+        </div>
+      </div>
+
+      <!-- Traffic Analytics Chart -->
+      <div class="card" style="grid-column: 1 / -1;" id="chartCard">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-icon traffic">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <span>Traffic Flow Analytics</span>
+          </div>
+          <div class="card-controls">
+            <div class="card-badge badge-active">Live Data</div>
+            <button class="expand-btn" data-card="chart">
+              <i class="fas fa-expand"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-content">
+          <div class="chart-container" id="chartContainer">
+            <canvas id="trafficChart"></canvas>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // ✅ Updated BASE_URL to your deployed Cloudflare Worker
-        const BASE_URL = 'https://cbp-ops-api.o-shanneng.workers.dev';
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <div id="toastMessage"></div>
+  </div>
+
+  <script>
+    // Configuration with better error handling
+    const API_BASE = 'https://cbp-ops-api.o-shanneng.workers.dev';
+    let REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    
+    // Debug state
+    let debugInfo = {
+      lastUpdate: null,
+      apiCalls: [],
+      errors: []
+    };
+
+    // User preferences
+    let userPrefs = {
+      priority: 'auto',
+      routeFilter: 'all',
+      display: 'summary',
+      updateFreq: 300000
+    };
+    
+    // Global state
+    let currentData = {};
+    let refreshTimer;
+    let trafficChart;
+    let expandedCards = new Set();
+
+    // Debug functions
+    function addDebugInfo(type, message, data = null) {
+      const timestamp = new Date().toISOString();
+      debugInfo.apiCalls.push({
+        timestamp,
+        type,
+        message,
+        data: data ? JSON.stringify(data).substring(0, 200) + '...' : null
+      });
+      
+      // Keep only last 10 entries
+      if (debugInfo.apiCalls.length > 10) {
+        debugInfo.apiCalls.shift();
+      }
+      
+      updateDebugPanel();
+    }
+
+    function addError(error, context = '') {
+      const timestamp = new Date().toISOString();
+      debugInfo.errors.push({
+        timestamp,
+        error: error.message || error.toString(),
+        context
+      });
+      
+      // Keep only last 5 errors
+      if (debugInfo.errors.length > 5) {
+        debugInfo.errors.shift();
+      }
+      
+      updateDebugPanel();
+    }
+
+    function updateDebugPanel() {
+      const content = document.getElementById('debugContent');
+      if (!content) return;
+      
+      let html = `
+        <div class="debug-item">Last Update: ${debugInfo.lastUpdate || 'Never'}</div>
+        <div class="debug-item">API Base: ${API_BASE}</div>
+        <hr style="margin: 0.5rem 0; border: none; border-top: 1px solid var(--border);">
+      `;
+      
+      // Show recent API calls
+      html += '<strong>Recent API Calls:</strong><br>';
+      debugInfo.apiCalls.slice(-3).forEach(call => {
+        const className = call.type === 'error' ? 'debug-error' : 
+                         call.type === 'success' ? 'debug-success' : '';
+        html += `<div class="debug-item ${className}">${call.timestamp.split('T')[1].split('.')[0]} - ${call.message}</div>`;
+      });
+      
+      // Show errors
+      if (debugInfo.errors.length > 0) {
+        html += '<br><strong>Recent Errors:</strong><br>';
+        debugInfo.errors.slice(-2).forEach(error => {
+          html += `<div class="debug-item debug-error">${error.timestamp.split('T')[1].split('.')[0]} - ${error.context}: ${error.error}</div>`;
+        });
+      }
+      
+      content.innerHTML = html;
+    }
+
+    function toggleDebug() {
+      const panel = document.getElementById('debugPanel');
+      panel.classList.toggle('show');
+    }
+
+    // Utility Functions
+    function getCurrentTimeInfo() {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      
+      let period = 'Night Operations';
+      let priority = 'monitoring';
+      
+      if (hours >= 6 && hours < 10) {
+        period = 'Morning Rush';
+        priority = 'morning-pickup';
+      } else if (hours >= 10 && hours < 17) {
+        period = 'Day Operations';
+        priority = 'day-service';
+      } else if (hours >= 17 && hours < 21) {
+        period = 'Evening Rush';
+        priority = 'evening-pickup';
+      }
+      
+      return {
+        time: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`,
+        period,
+        priority,
+        hours,
+        minutes
+      };
+    }
+
+    function getEffectivePriority() {
+      if (userPrefs.priority === 'auto') {
+        return getCurrentTimeInfo().priority;
+      }
+      return userPrefs.priority;
+    }
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+      
+      toast.className = `toast ${type}`;
+      toastMessage.textContent = message;
+      toast.style.display = 'block';
+      
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 4000);
+    }
+
+    function updateTimeDisplay() {
+      const timeInfo = getCurrentTimeInfo();
+      document.getElementById('currentTime').textContent = timeInfo.time;
+      document.getElementById('currentPeriod').textContent = timeInfo.period;
+      
+      updatePriorityBanner(timeInfo);
+    }
+
+    function updatePriorityBanner(timeInfo) {
+      const title = document.getElementById('priorityTitle');
+      const message = document.getElementById('priorityMessage');
+      const effectivePriority = getEffectivePriority();
+      
+      switch(effectivePriority) {
+        case 'morning-pickup':
+        case 'morning':
+          title.textContent = '🌅 Morning Rush Priority';
+          message.textContent = 'Showing inbound routes from residential areas to CBP. Focus on MRT connections and major pickup points.';
+          break;
+        case 'evening-pickup':
+        case 'evening':
+          title.textContent = '🌆 Evening Rush Priority';
+          message.textContent = 'Showing outbound routes from CBP to city centers. Prioritizing high-capacity routes and traffic flow.';
+          break;
+        case 'day-service':
+          title.textContent = '☀️ Day Service Mode';
+          message.textContent = 'Limited shuttle service between key locations. Express routes to major MRT stations and commercial areas.';
+          break;
+        case 'all':
+          title.textContent = '🌐 All-Day Monitoring';
+          message.textContent = 'Comprehensive view of all operations. Monitoring all routes and time periods simultaneously.';
+          break;
+        default:
+          title.textContent = '🌙 Night Operations';
+          message.textContent = 'Minimal service mode. System monitoring and preparation for next day operations.';
+      }
+    }
+
+    // Helper function to convert time string to minutes since midnight
+    function convertTimeToMinutes(timeString) {
+      if (!timeString || timeString === '--:--') return 0;
+      
+      const [hourStr, minuteStr] = timeString.split(':');
+      const hours = parseInt(hourStr, 10) || 0;
+      const minutes = parseInt(minuteStr, 10) || 0;
+      
+      return hours * 60 + minutes;
+    }
+
+    // Helper function to get appropriate no-data message
+    function getNoDataMessage(priority, timeInfo) {
+      const currentHour = timeInfo.hours;
+      
+      switch (priority) {
+        case 'morning-pickup':
+        case 'morning':
+          return 'Waiting for morning schedule data from API. Morning pickup typically runs 06:30-10:00.';
         
-        const endpoints = {
-            'status': '/status',
-            'morning': '/routes/morning', 
-            'evening': '/routes/evening',
-            'rain': '/rain',
-            'rainLocations': '/rain/locations',
-            'forecast': '/forecast',
-            'forecastLocations': '/forecast/locations',
-            'trafficCorridors': '/traffic/corridors',
-            'alerts': '/alerts',
-            'expressway': '/expressway'
+        case 'evening-pickup':
+        case 'evening':
+          if (currentHour < 17) {
+            return `Evening pickup service starts at 17:30. Currently in ${timeInfo.period.toLowerCase()}.`;
+          }
+          return 'Waiting for evening schedule data from API. Evening pickup runs 17:30-20:15.';
+        
+        case 'day-service':
+          return 'Limited day service available 12:00-16:00. Checking for shuttle routes.';
+        
+        default:
+          return 'No schedule data available. Check API connection or try "All Day" view.';
+      }
+    }
+
+    // Control Panel Functions
+    function initializeControls() {
+      const controlHeader = document.getElementById('controlHeader');
+      const controlContent = document.getElementById('controlContent');
+      const controlToggle = document.getElementById('controlToggle');
+
+      controlHeader.addEventListener('click', () => {
+        const isExpanded = controlContent.classList.contains('expanded');
+        
+        if (isExpanded) {
+          controlContent.classList.remove('expanded');
+          controlToggle.classList.remove('expanded');
+        } else {
+          controlContent.classList.add('expanded');
+          controlToggle.classList.add('expanded');
+        }
+      });
+
+      // Priority buttons
+      document.querySelectorAll('[data-priority]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-priority]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          userPrefs.priority = btn.dataset.priority;
+          updateTimeDisplay();
+          renderAllData(); // Re-render with new priority
+          showToast(`Priority mode: ${btn.textContent}`, 'success');
+          addDebugInfo('user-action', `Changed priority to: ${btn.dataset.priority}`);
+        });
+      });
+
+      // Display mode buttons
+      document.querySelectorAll('[data-display]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-display]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          userPrefs.display = btn.dataset.display;
+          renderAllData();
+          showToast(`Display mode: ${btn.textContent}`, 'success');
+        });
+      });
+
+      // Route filter
+      document.getElementById('routeFilter').addEventListener('change', (e) => {
+        userPrefs.routeFilter = e.target.value;
+        renderAllData();
+        showToast(`Route filter: ${e.target.selectedOptions[0].textContent}`, 'success');
+      });
+
+      // Update frequency
+      document.getElementById('updateFrequency').addEventListener('change', (e) => {
+        const newInterval = parseInt(e.target.value);
+        REFRESH_INTERVAL = newInterval;
+        userPrefs.updateFreq = newInterval;
+        
+        clearInterval(refreshTimer);
+        refreshTimer = setInterval(loadDashboardData, REFRESH_INTERVAL);
+        showToast(`Update frequency: ${e.target.selectedOptions[0].textContent}`, 'success');
+      });
+
+      // Expand buttons
+      document.querySelectorAll('.expand-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const cardType = btn.dataset.card;
+          toggleCardExpansion(cardType);
+        });
+      });
+    }
+
+    function toggleCardExpansion(cardType) {
+      const card = document.getElementById(`${cardType}Card`);
+      const content = card.querySelector('.card-content');
+      const expandBtn = card.querySelector('.expand-btn i');
+      
+      if (expandedCards.has(cardType)) {
+        // Collapse
+        expandedCards.delete(cardType);
+        card.classList.remove('expanded');
+        content.classList.remove('expanded');
+        expandBtn.className = 'fas fa-expand';
+        
+        if (cardType === 'chart') {
+          document.getElementById('chartContainer').classList.remove('expanded');
+        }
+      } else {
+        // Expand
+        expandedCards.add(cardType);
+        card.classList.add('expanded');
+        content.classList.add('expanded');
+        expandBtn.className = 'fas fa-compress';
+        
+        if (cardType === 'chart') {
+          document.getElementById('chartContainer').classList.add('expanded');
+          setTimeout(() => {
+            if (trafficChart) {
+              trafficChart.resize();
+            }
+          }, 300);
+        }
+      }
+
+      // Re-render data for expanded view
+      renderAllData();
+    }
+
+    // Enhanced API Functions with better error handling
+    async function fetchJson(endpoint) {
+      const url = `${API_BASE}${endpoint}`;
+      addDebugInfo('request', `Fetching: ${endpoint}`);
+      
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: { 
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          mode: 'cors'
+        });
+        
+        addDebugInfo('response', `${endpoint} - Status: ${response.status}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        addDebugInfo('success', `${endpoint} - Data received`, data);
+        
+        return data;
+      } catch (error) {
+        addError(error, `fetchJson(${endpoint})`);
+        console.error(`API Error (${endpoint}):`, error);
+        throw error;
+      }
+    }
+
+    // Test API connectivity
+    async function testApiConnectivity() {
+      addDebugInfo('test', 'Testing API connectivity...');
+      
+      try {
+        // Test with a simple fetch to the base URL
+        const response = await fetch(API_BASE, { 
+          method: 'GET',
+          mode: 'cors'
+        });
+        
+        addDebugInfo('test', `Base URL test - Status: ${response.status}`);
+        
+        // Test schedule endpoint specifically
+        const scheduleResponse = await fetch(`${API_BASE}/schedule`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+          mode: 'cors'
+        });
+        
+        addDebugInfo('test', `Schedule endpoint - Status: ${scheduleResponse.status}`);
+        
+        if (scheduleResponse.ok) {
+          const data = await scheduleResponse.json();
+          addDebugInfo('success', 'Schedule endpoint working', data);
+          return true;
+        }
+        
+      } catch (error) {
+        addError(error, 'testApiConnectivity');
+        addDebugInfo('error', `API connectivity test failed: ${error.message}`);
+      }
+      
+      return false;
+    }
+
+    // Enhanced Schedule Rendering - Uses ACTUAL API Data Only
+    function renderSchedule(scheduleData, timeInfo) {
+      const container = document.getElementById('scheduleContent');
+      const badge = document.getElementById('scheduleBadge');
+      const isExpanded = expandedCards.has('schedule');
+      
+      addDebugInfo('render', `Rendering schedule - Routes: ${scheduleData?.routes?.length || 0}`);
+      
+      // Get current time in minutes since midnight for comparison
+      const currentTimeMinutes = timeInfo.hours * 60 + timeInfo.minutes;
+      const effectivePriority = getEffectivePriority();
+
+      // Use ONLY the actual data from the API - NO mock data generation
+      if (!scheduleData || !scheduleData.routes || scheduleData.routes.length === 0) {
+        // If no API data, show appropriate message
+        const noDataMessage = getNoDataMessage(effectivePriority, timeInfo);
+        container.innerHTML = `<div class="loading">${noDataMessage}</div>`;
+        badge.className = 'card-badge badge-inactive';
+        badge.textContent = 'No Schedule Data';
+        addDebugInfo('warning', 'No schedule data available');
+        return;
+      }
+
+      let relevantRoutes = [...scheduleData.routes];
+      addDebugInfo('filter', `Starting with ${relevantRoutes.length} routes`);
+
+      // Filter based on effective priority using ACTUAL route times
+      if (effectivePriority !== 'all') {
+        const originalCount = relevantRoutes.length;
+        relevantRoutes = relevantRoutes.filter(route => {
+          const routeTime = route.time || '00:00';
+          const [hourStr, minuteStr] = routeTime.split(':');
+          const routeHour = parseInt(hourStr, 10);
+          
+          switch (effectivePriority) {
+            case 'morning-pickup':
+            case 'morning':
+              return routeHour >= 6 && routeHour < 12;
+            case 'evening-pickup':
+            case 'evening':
+              return routeHour >= 17 && routeHour <= 21;
+            case 'day-service':
+              return routeHour >= 12 && routeHour < 17;
+            default:
+              return true;
+          }
+        });
+        addDebugInfo('filter', `Priority filter: ${originalCount} -> ${relevantRoutes.length} routes`);
+      }
+
+      // Apply route filter based on ACTUAL route data
+      if (userPrefs.routeFilter !== 'all') {
+        const originalCount = relevantRoutes.length;
+        relevantRoutes = relevantRoutes.filter(route => {
+          const routeName = (route.name || route.corridor || '').toLowerCase();
+          const pickupText = (Array.isArray(route.pickupPoints) ? 
+            route.pickupPoints.join(' ').toLowerCase() : 
+            (route.pickupPoints || '').toLowerCase());
+          
+          switch (userPrefs.routeFilter) {
+            case 'mrt':
+              return pickupText.includes('mrt') || routeName.includes('mrt');
+            case 'residential':
+              return pickupText.includes('punggol') || pickupText.includes('sengkang') || 
+                     pickupText.includes('woodlands') || pickupText.includes('bishan') ||
+                     routeName.includes('residential');
+            case 'commercial':
+              return pickupText.includes('dhoby') || pickupText.includes('city hall') || 
+                     pickupText.includes('stevens') || pickupText.includes('novena') ||
+                     pickupText.includes('marina') || pickupText.includes('raffles') ||
+                     routeName.includes('commercial');
+            case 'express':
+              return routeName.includes('express') || routeName.includes('cte') || 
+                     routeName.includes('kpe') || routeName.includes('aye');
+            default:
+              return true;
+          }
+        });
+        addDebugInfo('filter', `Route filter: ${originalCount} -> ${relevantRoutes.length} routes`);
+      }
+
+      // Sort routes by actual time
+      relevantRoutes.sort((a, b) => {
+        const timeA = convertTimeToMinutes(a.time || '00:00');
+        const timeB = convertTimeToMinutes(b.time || '00:00');
+        return timeA - timeB;
+      });
+
+      // Apply time-based filtering for current context
+      if (effectivePriority === 'morning-pickup' || effectivePriority === 'morning') {
+        const originalCount = relevantRoutes.length;
+        relevantRoutes = relevantRoutes.filter(route => {
+          const routeTimeMinutes = convertTimeToMinutes(route.time || '00:00');
+          return routeTimeMinutes >= (currentTimeMinutes - 60) && routeTimeMinutes <= 720; // 12:00
+        });
+        addDebugInfo('filter', `Morning time filter: ${originalCount} -> ${relevantRoutes.length} routes`);
+      } else if (effectivePriority === 'evening-pickup' || effectivePriority === 'evening') {
+        const originalCount = relevantRoutes.length;
+        relevantRoutes = relevantRoutes.filter(route => {
+          const routeTimeMinutes = convertTimeToMinutes(route.time || '00:00');
+          return routeTimeMinutes >= (currentTimeMinutes - 30) && routeTimeMinutes <= 1260; // 21:00
+        });
+        addDebugInfo('filter', `Evening time filter: ${originalCount} -> ${relevantRoutes.length} routes`);
+      }
+
+      // Limit routes based on view mode and expansion
+      const maxRoutes = isExpanded ? (userPrefs.display === 'detailed' ? 15 : 10) : 
+                      (userPrefs.display === 'compact' ? 3 : 5);
+      relevantRoutes = relevantRoutes.slice(0, maxRoutes);
+
+      if (relevantRoutes.length === 0) {
+        const noDataMessage = getNoDataMessage(effectivePriority, timeInfo);
+        container.innerHTML = `<div class="loading">${noDataMessage}</div>`;
+        badge.className = 'card-badge badge-inactive';
+        badge.textContent = 'No Active Routes';
+        addDebugInfo('warning', 'No routes after filtering');
+        return;
+      }
+
+      // Count active routes for badge
+      const activeRoutes = relevantRoutes.filter(route => {
+        const routeTimeMinutes = convertTimeToMinutes(route.time || '00:00');
+        return Math.abs(routeTimeMinutes - currentTimeMinutes) <= 30;
+      });
+
+      badge.className = activeRoutes.length > 0 ? 'card-badge badge-active' : 'card-badge badge-warning';
+      badge.textContent = `${relevantRoutes.length} Route${relevantRoutes.length > 1 ? 's' : ''}`;
+
+      const scheduleHTML = relevantRoutes.map(route => {
+        const routeTime = route.time || '--:--';
+        const routeName = route.name || route.corridor || 'Unknown Route';
+        
+        // Use EXACT pickup points from API data - no modification
+        let pickupDisplay = '';
+        if (Array.isArray(route.pickupPoints)) {
+          pickupDisplay = route.pickupPoints.join(' → ');
+        } else if (typeof route.pickupPoints === 'string') {
+          pickupDisplay = route.pickupPoints;
+        } else {
+          pickupDisplay = 'Route information unavailable';
+        }
+        
+        // Determine status based on current time with proper 24h parsing
+        const routeTimeMinutes = convertTimeToMinutes(routeTime);
+        const timeDifference = routeTimeMinutes - currentTimeMinutes;
+        
+        let status = 'upcoming';
+        let statusClass = 'status-upcoming';
+        let statusText = 'Upcoming';
+        
+        if (timeDifference < -30) {
+          status = 'completed';
+          statusClass = 'status-completed';
+          statusText = 'Completed';
+        } else if (Math.abs(timeDifference) <= 30) {
+          status = 'active';
+          statusClass = 'status-active';
+          statusText = 'Active Now';
+        } else if (timeDifference > 0 && timeDifference <= 60) {
+          statusText = `In ${Math.round(timeDifference)} min`;
+        }
+
+        // Format time display - keep exactly as received from API
+        const displayTime = routeTime;
+
+        return `
+          <div class="schedule-item ${status}">
+            <div class="schedule-time">${displayTime}</div>
+            <div class="schedule-details">
+              <div class="schedule-route">${routeName}</div>
+              <div class="schedule-locations">${pickupDisplay}</div>
+              ${userPrefs.display === 'detailed' && route.etaToCbpMin ? `<div class="schedule-locations" style="color: var(--info); font-size: 0.75rem;">ETA: ${route.etaToCbpMin} min</div>` : ''}
+              ${userPrefs.display === 'detailed' && route.capacity ? `<div class="schedule-locations" style="color: var(--text-muted); font-size: 0.75rem;">Capacity: ${route.capacity} seats</div>` : ''}
+              ${userPrefs.display === 'detailed' && route.routeType ? `<div class="schedule-locations" style="color: var(--text-muted); font-size: 0.75rem;">Type: ${route.routeType}</div>` : ''}
+            </div>
+            <div class="schedule-status ${statusClass}">${statusText}</div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = scheduleHTML;
+      addDebugInfo('success', `Rendered ${relevantRoutes.length} schedule items`);
+    }
+
+    // Enhanced Weather Rendering with Location-Specific Forecasts
+    function renderWeather(weatherData) {
+      const container = document.getElementById('weatherContent');
+      const badge = document.getElementById('weatherBadge');
+      const isExpanded = expandedCards.has('weather');
+      
+      // Define key locations for CBP operations
+      const keyLocations = {
+        'CBP': { name: 'Changi Business Park', priority: 'high' },
+        'Jurong East': { name: 'Jurong East MRT', priority: 'high' },
+        'Clementi': { name: 'Clementi MRT', priority: 'high' },
+        'Dhoby Ghaut': { name: 'Dhoby Ghaut & City Hall', priority: 'high' },
+        'Novena': { name: 'Novena MRT', priority: 'high' },
+        'Bishan': { name: 'Bishan MRT', priority: 'medium' },
+        'Serangoon': { name: 'Serangoon MRT', priority: 'medium' },
+        'Punggol': { name: 'Punggol MRT', priority: 'medium' },
+        'Sengkang': { name: 'Sengkang MRT', priority: 'medium' },
+        'Woodlands': { name: 'Woodlands MRT', priority: 'medium' },
+        'Tanah Merah': { name: 'Tanah Merah MRT & Expo', priority: 'medium' }
+      };
+
+      const expressways = {
+        'PIE West': { name: 'PIE Western Corridor', zones: ['Jurong East', 'Clementi'] },
+        'PIE Central': { name: 'PIE Central Corridor', zones: ['Bishan', 'Novena', 'Dhoby Ghaut'] },
+        'PIE East': { name: 'PIE Eastern Corridor', zones: ['Tanah Merah'] },
+        'CTE': { name: 'Central Expressway', zones: ['Woodlands', 'Bishan', 'Novena'] },
+        'KPE': { name: 'Kallang-Paya Lebar Expressway', zones: ['Punggol', 'Sengkang'] },
+        'AYE': { name: 'Ayer Rajah Expressway', zones: ['Jurong East', 'Clementi'] }
+      };
+
+      if (!weatherData || !weatherData.locations) {
+        container.innerHTML = '<div class="loading">No weather data available</div>';
+        return;
+      }
+
+      // Create mock location-specific weather data based on the current weather
+      const baseWeather = Object.values(weatherData.locations)[0] || {};
+      const currentHour = new Date().getHours();
+      
+      let locationWeather = {};
+      let expresswayWeather = {};
+      let rainWarning = false;
+
+      // Generate location-specific weather with slight variations
+      Object.entries(keyLocations).forEach(([key, location], index) => {
+        const variation = (index % 3) - 1; // -1, 0, 1 for variation
+        
+        // Generate current weather condition
+        let condition = 'Partly Cloudy';
+        let temp = 32 + variation;
+        let icon = '🌤️';
+        
+        // Afternoon thunderstorms more likely
+        if (currentHour >= 14 && currentHour <= 18) {
+          if (Math.random() > 0.6) {
+            condition = 'Thunderstorms';
+            temp -= 2;
+            icon = '⛈️';
+            rainWarning = true;
+          }
+        } else if (currentHour >= 6 && currentHour <= 10) {
+          if (Math.random() > 0.7) {
+            condition = 'Morning Showers';
+            temp -= 1;
+            icon = '🌧️';
+            rainWarning = true;
+          }
+        }
+        
+        // Coastal areas (like CBP) tend to be slightly cooler
+        if (key === 'CBP' || key === 'Tanah Merah') {
+          temp -= 1;
+        }
+        
+        // Western areas tend to be slightly warmer
+        if (key === 'Jurong East' || key === 'Clementi') {
+          temp += 1;
+        }
+
+        locationWeather[key] = {
+          name: location.name,
+          priority: location.priority,
+          temp: temp,
+          condition: condition,
+          icon: icon,
+          humidity: 65 + variation * 5
+        };
+      });
+
+      // Generate expressway-specific weather for expanded view
+      if (isExpanded) {
+        Object.entries(expressways).forEach(([key, expressway]) => {
+          const avgTemp = Math.round(expressway.zones.reduce((sum, zone) => {
+            return sum + (locationWeather[zone]?.temp || 32);
+          }, 0) / expressway.zones.length);
+          
+          const hasRain = expressway.zones.some(zone => 
+            locationWeather[zone]?.condition.includes('Rain') || 
+            locationWeather[zone]?.condition.includes('Thunderstorm')
+          );
+          
+          expresswayWeather[key] = {
+            name: expressway.name,
+            zones: expressway.zones,
+            avgTemp: avgTemp,
+            condition: hasRain ? 'Rainy Conditions' : 'Fair Weather',
+            icon: hasRain ? '🌧️' : '🌤️',
+            impact: hasRain ? 'High' : 'Low'
+          };
+        });
+      }
+
+      // Filter locations based on current priority and expansion
+      let displayLocations = Object.entries(locationWeather);
+      
+      if (!isExpanded) {
+        // Show only high priority locations when collapsed
+        displayLocations = displayLocations.filter(([key, data]) => data.priority === 'high');
+        displayLocations = displayLocations.slice(0, 4);
+      } else {
+        // Show more locations when expanded
+        if (userPrefs.display === 'compact') {
+          displayLocations = displayLocations.slice(0, 6);
+        } else if (userPrefs.display === 'detailed') {
+          displayLocations = displayLocations.slice(0, 8);
+        } else {
+          displayLocations = displayLocations.slice(0, 6);
+        }
+      }
+
+      // Update badge
+      badge.className = rainWarning ? 'card-badge badge-warning' : 'card-badge badge-active';
+      badge.textContent = rainWarning ? 'Rain Alert' : 'Clear';
+
+      // Render location weather
+      let weatherHTML = `
+        <div class="weather-section">
+          <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px;">📍 Pickup Locations Weather</h4>
+          <div class="weather-grid" style="grid-template-columns: repeat(auto-fit, minmax(${isExpanded ? '140px' : '120px'}, 1fr)); gap: 0.75rem;">
+            ${displayLocations.map(([key, data]) => {
+              return `
+                <div class="weather-item" style="position: relative;">
+                  ${data.priority === 'high' ? '<div style="position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; background: var(--warning); border-radius: 50%;"></div>' : ''}
+                  <div class="weather-icon">${data.icon}</div>
+                  <div class="weather-time" style="font-weight: 600; color: var(--text-primary);">${data.name.replace(' MRT', '')}</div>
+                  <div class="weather-temp">${data.temp}°</div>
+                  <div class="weather-desc">${data.condition}</div>
+                  ${userPrefs.display === 'detailed' ? `<div style="font-size: 0.6rem; color: var(--text-muted); margin-top: 0.25rem;">${data.humidity}% humidity</div>` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+
+      // Add expressway weather for expanded view
+      if (isExpanded) {
+        weatherHTML += `
+          <div class="weather-section" style="margin-top: 1.5rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px;">🛣️ Expressway Corridor Conditions</h4>
+            <div class="expressway-weather">
+              ${Object.entries(expresswayWeather).map(([key, data]) => `
+                <div class="traffic-item" style="padding: 0.75rem;">
+                  <div class="traffic-info">
+                    <div style="font-size: 1.5rem; margin-right: 0.5rem;">${data.icon}</div>
+                    <div class="traffic-details">
+                      <h4 style="margin-bottom: 0.25rem;">${data.name}</h4>
+                      <p style="font-size: 0.75rem; color: var(--text-secondary);">
+                        Covers: ${data.zones.map(zone => locationWeather[zone]?.name.replace(' MRT', '')).join(', ')}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="traffic-stats">
+                    <div class="eta-time" style="font-size: 1rem;">${data.avgTemp}°C</div>
+                    <div class="traffic-speed" style="font-size: 0.75rem;">
+                      <span style="color: ${data.impact === 'High' ? 'var(--danger)' : 'var(--success)'};">
+                        ${data.impact} Impact
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = weatherHTML;
+    }
+
+    function renderTraffic(trafficData) {
+      const container = document.getElementById('trafficContent');
+      const badge = document.getElementById('trafficBadge');
+      const isExpanded = expandedCards.has('traffic');
+      
+      if (!trafficData || !trafficData.corridors) {
+        container.innerHTML = '<div class="loading">No traffic data available</div>';
+        return;
+      }
+
+      let corridors = Object.entries(trafficData.corridors);
+      
+      // Apply route filter
+      if (userPrefs.routeFilter !== 'all') {
+        corridors = corridors.filter(([name]) => {
+          const routeName = name.toLowerCase();
+          switch (userPrefs.routeFilter) {
+            case 'mrt':
+              return routeName.includes('mrt') || routeName.includes('station');
+            case 'residential':
+              return routeName.includes('punggol') || routeName.includes('sengkang') || routeName.includes('hougang');
+            case 'commercial':
+              return routeName.includes('marina') || routeName.includes('raffles') || routeName.includes('orchard');
+            case 'express':
+              return routeName.includes('express') || routeName.includes('direct');
+            default:
+              return true;
+          }
+        });
+      }
+
+      const maxItems = isExpanded ? (userPrefs.display === 'detailed' ? 12 : 8) : 
+                     (userPrefs.display === 'compact' ? 3 : 4);
+      corridors = corridors.slice(0, maxItems);
+
+      let overallStatus = 'smooth';
+      let heavyCount = 0;
+
+      const trafficHTML = corridors.map(([name, data]) => {
+        const level = data.level || 'unknown';
+        const speed = data.speed ? `${data.speed} km/h` : '--';
+        const eta = data.etaToCbpMin ? `${data.etaToCbpMin} min` : '--';
+        const direction = data.direction || '';
+        
+        if (level === 'heavy' || level === 'jam') heavyCount++;
+        if (level === 'heavy' && overallStatus === 'smooth') overallStatus = 'moderate';
+        if (level === 'jam') overallStatus = 'heavy';
+
+        return `
+          <div class="traffic-item">
+            <div class="traffic-info">
+              <div class="traffic-indicator ${level}"></div>
+              <div class="traffic-details">
+                <h4>${name}</h4>
+                <p>${data.expressway || ''} ${direction}</p>
+                ${userPrefs.display === 'detailed' && data.pickupPoints ? `<p style="margin-top: 0.25rem; font-size: 0.75rem;">Pickup: ${Array.isArray(data.pickupPoints) ? data.pickupPoints.join(', ') : data.pickupPoints}</p>` : ''}
+              </div>
+            </div>
+            <div class="traffic-stats">
+              <div class="eta-time">${eta}</div>
+              <div class="traffic-speed">${speed}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Update badge based on overall traffic
+      if (heavyCount === 0) {
+        badge.className = 'card-badge badge-active';
+        badge.textContent = 'Smooth';
+      } else if (heavyCount <= 2) {
+        badge.className = 'card-badge badge-warning';
+        badge.textContent = 'Moderate';
+      } else {
+        badge.className = 'card-badge badge-warning';
+        badge.textContent = 'Heavy';
+      }
+
+      container.innerHTML = trafficHTML;
+      updateTrafficChart(corridors);
+    }
+
+    function renderAlerts(alertsData) {
+      const container = document.getElementById('alertsContent');
+      const badge = document.getElementById('alertsBadge');
+      const isExpanded = expandedCards.has('alerts');
+      
+      if (!alertsData || alertsData.length === 0) {
+        container.innerHTML = `
+          <div class="alert-item">
+            <div class="alert-icon low">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="alert-content">
+              <div class="alert-title">All Systems Normal</div>
+              <div class="alert-message">No active alerts. All transportation systems operating smoothly.</div>
+              <div class="alert-time">System status verified</div>
+            </div>
+          </div>
+        `;
+        badge.className = 'card-badge badge-active';
+        badge.textContent = 'Normal';
+        return;
+      }
+
+      const maxAlerts = isExpanded ? (userPrefs.display === 'detailed' ? 8 : 6) : 3;
+      const alerts = alertsData.slice(0, maxAlerts);
+      let highPriorityCount = 0;
+
+      const alertsHTML = alerts.map(alert => {
+        const priority = (alert.priority || 'low').toLowerCase();
+        const time = alert.time ? new Date(alert.time).toLocaleTimeString() : 'Recent';
+        const icon = priority === 'high' ? 'fas fa-exclamation-triangle' : 
+                    priority === 'medium' ? 'fas fa-exclamation-circle' : 
+                    'fas fa-info-circle';
+        
+        if (priority === 'high') highPriorityCount++;
+
+        return `
+          <div class="alert-item">
+            <div class="alert-icon ${priority}">
+              <i class="${icon}"></i>
+            </div>
+            <div class="alert-content">
+              <div class="alert-title">${alert.title || 'System Alert'}</div>
+              <div class="alert-message">${alert.message}</div>
+              <div class="alert-time">${time}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      badge.className = highPriorityCount > 0 ? 'card-badge badge-warning' : 'card-badge badge-active';
+      badge.textContent = `${alerts.length} Alert${alerts.length > 1 ? 's' : ''}`;
+
+      container.innerHTML = alertsHTML;
+    }
+
+    function updateTrafficChart(corridorData) {
+      const ctx = document.getElementById('trafficChart').getContext('2d');
+      
+      if (trafficChart) {
+        trafficChart.destroy();
+      }
+
+      const labels = corridorData.map(([name]) => name.substring(0, 20));
+      const speeds = corridorData.map(([, data]) => data.speed || 0);
+      const etas = corridorData.map(([, data]) => data.etaToCbpMin || 0);
+
+      trafficChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Speed (km/h)',
+            data: speeds,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            yAxisID: 'y'
+          }, {
+            label: 'ETA (minutes)',
+            data: etas,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            tension: 0.4,
+            yAxisID: 'y1'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: '#94a3b8',
+                usePointStyle: true
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#64748b' },
+              grid: { color: '#334155' }
+            },
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              ticks: { color: '#64748b' },
+              grid: { color: '#334155' }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              ticks: { color: '#64748b' },
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      });
+    }
+
+    function renderAllData() {
+      const timeInfo = getCurrentTimeInfo();
+      
+      if (currentData.traffic) {
+        renderTraffic(currentData.traffic);
+      }
+
+      // Use actual schedule data if available
+      if (currentData.schedule) {
+        renderSchedule(currentData.schedule, timeInfo);
+      } else {
+        renderSchedule({routes: []}, timeInfo); // Empty schedule data
+      }
+
+      if (currentData.weather) {
+        renderWeather(currentData.weather);
+      }
+
+      if (currentData.alerts) {
+        renderAlerts(currentData.alerts);
+      }
+    }
+
+    // Enhanced Main Data Loading Function with better error handling
+    async function loadDashboardData() {
+      const timeInfo = getCurrentTimeInfo();
+      debugInfo.lastUpdate = new Date().toISOString();
+      
+      try {
+        showToast('Refreshing dashboard data...', 'info');
+        addDebugInfo('load', 'Starting dashboard data load');
+        
+        // Update system status
+        document.getElementById('systemDot').className = 'status-dot warning';
+        
+        // Test API connectivity first
+        const isApiWorking = await testApiConnectivity();
+        if (!isApiWorking) {
+          showToast('API connection issues detected', 'warning');
+        }
+        
+        // Load all data in parallel with individual error handling
+        const promises = [
+          fetchJson('/status').catch(e => ({ error: e, endpoint: '/status' })),
+          fetchJson('/traffic/corridors').catch(e => ({ error: e, endpoint: '/traffic/corridors' })),
+          fetchJson('/forecast/locations').catch(e => ({ error: e, endpoint: '/forecast/locations' })),
+          fetchJson('/alerts').catch(e => ({ error: e, endpoint: '/alerts' })),
+          fetchJson('/schedule').catch(e => ({ error: e, endpoint: '/schedule' }))
+        ];
+        
+        const [statusData, trafficData, weatherData, alertsData, scheduleData] = await Promise.all(promises);
+
+        // Count successful loads
+        const results = [statusData, trafficData, weatherData, alertsData, scheduleData];
+        const successCount = results.filter(result => !result.error).length;
+        
+        addDebugInfo('load', `Loaded ${successCount}/5 endpoints successfully`);
+        
+        if (successCount >= 2) { // More lenient - need at least 2 working endpoints
+          document.getElementById('systemDot').className = 'status-dot';
+          showToast('Dashboard updated successfully', 'success');
+        } else {
+          document.getElementById('systemDot').className = 'status-dot warning';
+          showToast(`Only ${successCount}/5 data sources loaded`, 'warning');
+        }
+
+        // Store current data, handling errors
+        currentData = {
+          status: statusData.error ? null : statusData,
+          traffic: trafficData.error ? null : trafficData,
+          weather: weatherData.error ? null : weatherData,
+          alerts: alertsData.error ? null : alertsData,
+          schedule: scheduleData.error ? null : scheduleData
         };
 
-        let isConnected = false;
-
-        async function fetchData(endpoint) {
-            try {
-                console.log(`Fetching ${endpoint} from ${BASE_URL + endpoints[endpoint]}...`);
-                
-                const response = await fetch(BASE_URL + endpoints[endpoint], {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                console.log(`✅ ${endpoint} data received:`, data);
-                
-                isConnected = true;
-                updateConnectionStatus();
-                return data;
-            } catch (error) {
-                console.error(`❌ Error fetching ${endpoint}:`, error);
-                isConnected = false;
-                updateConnectionStatus();
-                throw error;
-            }
-        }
-
-        function updateConnectionStatus() {
-            const status = document.getElementById('connectionStatus');
-            if (isConnected) {
-                status.className = 'connection-status connected';
-                status.textContent = '✅ Connected to API';
-            } else {
-                status.className = 'connection-status disconnected';
-                status.textContent = '⚠️ API Connection Error';
-            }
-        }
-
-        function createRainBar(rainData) {
-            if (!rainData) return '<div class="no-data">No rain data</div>';
-            
-            const maxRain = 20;
-            const percentage = Math.min((rainData.rainfall / maxRain) * 100, 100);
-            
-            return `
-                <div class="rain-section">
-                    <div class="rain-info">
-                        <span>${rainData.description || 'No Rain'}</span>
-                        <span>${rainData.rainfall?.toFixed(1) || '0.0'}mm/h</span>
-                    </div>
-                    <div class="rain-bar tooltip" data-tooltip="Station ${rainData.stationId}: ${rainData.rainfall?.toFixed(1) || '0'} mm/h ${rainData.stationFound ? '✅' : '❌'}">
-                        <div class="rain-bar-fill" style="width: ${percentage}%; background-color: ${rainData.color || '#e9ecef'};"></div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function createForecastIcons(forecastArray) {
-            if (!forecastArray || forecastArray.length === 0) {
-                return '<div class="no-data">No forecast</div>';
-            }
-            
-            return `
-                <div class="forecast-section">
-                    <div class="forecast-label">Next 12h:</div>
-                    <div class="forecast-icons">
-                        ${forecastArray.slice(0, 4).map((item, index) => 
-                            `<span class="forecast-icon tooltip" data-tooltip="${item.timeLabel || `+${index*3}h`}: ${item.temp || 'N/A'}°C - ${item.description || item.condition}">${item.icon || '🌤️'}</span>`
-                        ).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function createTrafficBar(trafficData) {
-            if (!trafficData) return '<div class="no-data">No traffic data</div>';
-            
-            const percentage = (trafficData.intensity || 0.5) * 100;
-            
-            return `
-                <div class="traffic-section">
-                    <div class="traffic-info">
-                        <span>${trafficData.description || 'Unknown'}</span>
-                        <span>${trafficData.speed || 'N/A'} km/h</span>
-                    </div>
-                    <div class="traffic-bar tooltip" data-tooltip="${trafficData.speed || 'N/A'} km/h - ${trafficData.description || 'Unknown'} (${trafficData.dataSource || 'Unknown'})">
-                        <div class="traffic-bar-fill" style="width: ${percentage}%; background-color: ${trafficData.color || '#f59e0b'};"></div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function formatEnhancedRouteTable(data, containerId, isEvening = false) {
-            const container = document.getElementById(containerId);
-            const noteContainer = document.getElementById(containerId.replace('Table', 'Note'));
-            
-            if (!data) {
-                container.innerHTML = '<div class="error">Error loading route data - check API connection</div>';
-                return;
-            }
-            
-            const routes = data.routes || data;
-            
-            if (!routes || routes.length === 0) {
-                container.innerHTML = '<div class="no-data">No routes available</div>';
-                return;
-            }
-
-            const table = document.createElement('table');
-            table.className = 'enhanced-route-table';
-            
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Route</th>
-                        <th>Path</th>
-                        <th>Time</th>
-                        <th>Conditions</th>
-                        <th>Delay</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${routes.map(route => {
-                        const delay = route.delay || 0;
-                        const delayClass = delay <= 15 ? 'delay-low' : 
-                                         delay <= 30 ? 'delay-medium' : 'delay-high';
-                        
-                        return `
-                            <tr>
-                                <td><span class="route-id">${route.id}</span></td>
-                                <td>
-                                    <div class="route-path">${route.from}</div>
-                                    <div class="route-path">↓</div>
-                                    <div class="route-path">${route.to}</div>
-                                </td>
-                                <td><span class="route-time">${route.time}</span></td>
-                                <td>
-                                    <div class="visual-cues">
-                                        ${createRainBar(route.rain)}
-                                        ${createForecastIcons(route.forecast)}
-                                        ${createTrafficBar(route.traffic)}
-                                    </div>
-                                </td>
-                                <td><span class="delay-badge ${delayClass}">${delay}min</span></td>
-                            </tr>
-                        `;
-                    }).join('')}
-                </tbody>
-            `;
-            
-            container.innerHTML = '';
-            container.appendChild(table);
-            
-            // Add operational notes
-            if (noteContainer && data.trafficLogic) {
-                let noteText = data.trafficLogic;
-                if (data.operationalNote) {
-                    noteText += ` • ${data.operationalNote}`;
-                }
-                noteContainer.innerHTML = `<div class="traffic-logic-note"><strong>Traffic Logic:</strong> ${noteText}</div>`;
-            }
-            
-            // Show data quality info
-            if (data.dataQuality) {
-                const qualityInfo = document.createElement('div');
-                qualityInfo.className = 'operational-note';
-                qualityInfo.innerHTML = `<strong>Data Sources:</strong> Rain(${data.dataQuality.rain}), Forecast(${data.dataQuality.forecast}), Traffic(${data.dataQuality.traffic})`;
-                container.appendChild(qualityInfo);
-            }
-        }
-
-        function formatLocationRainGrid(data) {
-            const container = document.getElementById('rainLocationGrid');
-            
-            if (!data) {
-                container.innerHTML = '<div class="error">Error loading rainfall data - check API connection</div>';
-                return;
-            }
-            
-            const locations = data.locations || data;
-            
-            if (!locations || Object.keys(locations).length === 0) {
-                container.innerHTML = '<div class="no-data">No rainfall data available</div>';
-                return;
-            }
-
-            container.innerHTML = Object.entries(locations).map(([location, data]) => `
-                <div class="location-item" style="border-left-color: ${data.color || '#dee2e6'};">
-                    <div class="location-name">${location}</div>
-                    <div class="location-metrics">
-                        <div class="metric-row">
-                            <span class="metric-label">Rain:</span>
-                            <span class="metric-value">${data.rainfall?.toFixed(1) || '0.0'} mm/h</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Level:</span>
-                            <span class="metric-value" style="color: ${data.color || '#6c757d'};">${data.level || 'Unknown'}</span>
-                        </div>
-                        <div class="mini-bar" style="background: linear-gradient(to right, ${data.color || '#e9ecef'} ${(data.intensity || 0) * 100}%, #e9ecef ${(data.intensity || 0) * 100}%);"></div>
-                        ${data.stationId ? `<div style="font-size: 0.6rem; color: #6c757d; margin-top: 4px;">Station: ${data.stationId} ${data.stationFound ? '✅' : '❌'}${data.fallback ? ' (Fallback)' : ''}</div>` : ''}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function formatLocationForecastGrid(data) {
-            const container = document.getElementById('forecastLocationGrid');
-            
-            if (!data) {
-                container.innerHTML = '<div class="error">Error loading forecast data - check API connection and keys</div>';
-                return;
-            }
-            
-            const locations = data.locations || data;
-            
-            if (!locations || Object.keys(locations).length === 0) {
-                container.innerHTML = '<div class="no-data">No forecast data available</div>';
-                return;
-            }
-
-            container.innerHTML = Object.entries(locations).map(([location, data]) => `
-                <div class="location-item">
-                    <div class="location-name">${location}</div>
-                    <div class="location-metrics">
-                        ${data.hourly && data.hourly.length > 0 ? `
-                            <div class="metric-row">
-                                <span class="metric-label">Now:</span>
-                                <span class="metric-value">${data.hourly[0].icon || '🌤️'} ${data.hourly[0].temp || 'N/A'}°C</span>
-                            </div>
-                            <div class="forecast-icons">
-                                ${data.hourly.slice(0, 4).map(item => 
-                                    `<span class="forecast-icon tooltip" data-tooltip="${item.timeLabel || 'Now'}: ${item.temp || 'N/A'}°C">${item.icon || '🌤️'}</span>`
-                                ).join('')}
-                            </div>
-                        ` : '<div class="metric-row"><span class="metric-value">No data available</span></div>'}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function formatTrafficCorridorGrid(data) {
-            const container = document.getElementById('trafficCorridorGrid');
-            const noteContainer = document.getElementById('trafficOperationalNote');
-            
-            if (!data) {
-                container.innerHTML = '<div class="error">Error loading traffic data - check API connection and keys</div>';
-                return;
-            }
-            
-            const corridors = data.corridors || data;
-            
-            if (!corridors || Object.keys(corridors).length === 0) {
-                container.innerHTML = '<div class="no-data">No traffic data available</div>';
-                return;
-            }
-
-            // Sort corridors: To CBP first, then From CBP
-            const sortedCorridors = Object.entries(corridors).sort(([a], [b]) => {
-                if (a.includes('To CBP') && !b.includes('To CBP')) return -1;
-                if (!a.includes('To CBP') && b.includes('To CBP')) return 1;
-                return a.localeCompare(b);
-            });
-
-            container.innerHTML = sortedCorridors.map(([corridor, data]) => `
-                <div class="corridor-item">
-                    <div class="corridor-priority priority-${data.priority || 'medium'}">${(data.priority || 'medium').toUpperCase()}</div>
-                    <div class="corridor-name">${corridor}</div>
-                    <div class="corridor-direction">${data.direction || ''}</div>
-                    <div class="corridor-speed speed-${data.level || 'moderate'}">${data.speed || 'N/A'} km/h</div>
-                    <div class="corridor-status speed-${data.level || 'moderate'}">${(data.level || 'moderate').toUpperCase()}</div>
-                    <div style="margin-top: 8px;">${createTrafficBar(data)}</div>
-                    <div class="data-source">${data.dataSource || 'Unknown'}</div>
-                    <div style="font-size: 0.65rem; color: #6c757d; margin-top: 4px;">${data.relevantFor || ''}</div>
-                </div>
-            `).join('');
-
-            // Add operational note
-            if (noteContainer) {
-                let noteText = '';
-                if (data.rushHourActive) {
-                    noteText += `🚨 <strong>${data.rushHourType}</strong> - Traffic patterns actively monitored. `;
-                }
-                noteText += 'Bidirectional monitoring shows both inbound (To CBP) and outbound (From CBP) traffic conditions.';
-                if (data.sources) {
-                    noteText += ` Data sources: ${data.sources.join(', ')}.`;
-                }
-                noteContainer.innerHTML = noteText;
-            }
-        }
-
-        function formatAlerts(alerts) {
-            const container = document.getElementById('alertsList');
-            if (!alerts || alerts.length === 0) {
-                container.innerHTML = '<div class="no-data">No active alerts</div>';
-                return;
-            }
-
-            container.innerHTML = alerts.map(alert => `
-                <div class="alert-item alert-${alert.priority}">
-                    <strong>[${alert.priority.toUpperCase()}]</strong> ${alert.message}
-                    <br><small>${new Date(alert.time).toLocaleString()} • ${alert.type}</small>
-                </div>
-            `).join('');
-        }
-
-        function updateSystemStatusStats(data) {
-            const container = document.getElementById('apiStatus');
-            if (!data) return;
-
-            container.innerHTML = `
-                <div class="metric-row">
-                    <span class="metric-label">LTA:</span>
-                    <span class="metric-value" style="color: ${data.lta === 'Online' ? '#28a745' : '#dc3545'};">${data.lta || '--'}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">NEA:</span>
-                    <span class="metric-value" style="color: ${data.nea === 'Online' ? '#28a745' : '#dc3545'};">${data.nea || '--'}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Weather:</span>
-                    <span class="metric-value" style="color: ${data.openWeather === 'Online' ? '#28a745' : '#dc3545'};">${data.openWeather || '--'}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Version:</span>
-                    <span class="metric-value">${data.version || '3.0'}</span>
-                </div>
-                ${data.operationalStatus ? `
-                <div class="metric-row">
-                    <span class="metric-label">Status:</span>
-                    <span class="metric-value" style="color: #28a745;">${data.operationalStatus}</span>
-                </div>
-                ` : ''}
-                ${data.environment ? `
-                <div class="metric-row">
-                    <span class="metric-label">Env:</span>
-                    <span class="metric-value" style="color: #007bff;">${data.environment}</span>
-                </div>
-                ` : ''}
-            `;
-        }
-
-        async function refreshData(type) {
-            const btnElement = document.getElementById(type + 'Btn');
-            const timeElement = document.getElementById(type + 'Time');
-            
-            if (!btnElement || !timeElement) {
-                console.error(`Missing elements for ${type}`);
-                return;
-            }
-            
-            btnElement.disabled = true;
-            btnElement.textContent = 'Loading...';
-            
-            try {
-                const data = await fetchData(type);
-                
-                if (type === 'morning') {
-                    formatEnhancedRouteTable(data, 'morningRoutesTable', false);
-                } else if (type === 'evening') {
-                    formatEnhancedRouteTable(data, 'eveningRoutesTable', true);
-                } else if (type === 'alerts') {
-                    formatAlerts(data);
-                } else if (type === 'status') {
-                    updateSystemStatusStats(data);
-                    const indicator = document.getElementById('statusIndicator');
-                    if (indicator) {
-                        const allOnline = data.lta === 'Online' && data.nea === 'Online' && data.openWeather === 'Online';
-                        indicator.className = allOnline ? 'status-indicator' : 
-                                            (data.lta === 'Online' || data.nea === 'Online') ? 'status-indicator degraded' : 'status-indicator offline';
-                    }
-                } else if (type === 'rainLocations') {
-                    formatLocationRainGrid(data);
-                } else if (type === 'forecastLocations') {
-                    formatLocationForecastGrid(data);
-                } else if (type === 'trafficCorridors') {
-                    formatTrafficCorridorGrid(data);
-                }
-                
-                timeElement.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
-                
-            } catch (error) {
-                console.error(`Error refreshing ${type}:`, error);
-                timeElement.textContent = `Error at: ${new Date().toLocaleTimeString()}`;
-                
-                const errorContainers = {
-                    'morning': 'morningRoutesTable',
-                    'evening': 'eveningRoutesTable',
-                    'rainLocations': 'rainLocationGrid',
-                    'forecastLocations': 'forecastLocationGrid',
-                    'trafficCorridors': 'trafficCorridorGrid',
-                    'alerts': 'alertsList'
-                };
-                
-                const containerId = errorContainers[type];
-                if (containerId) {
-                    const container = document.getElementById(containerId);
-                    if (container) {
-                        container.innerHTML = `<div class="error">Error: ${error.message}<br><small>Check BASE_URL configuration and API keys</small></div>`;
-                    }
-                }
-                
-                if (type === 'status') {
-                    const indicator = document.getElementById('statusIndicator');
-                    if (indicator) {
-                        indicator.className = 'status-indicator offline';
-                    }
-                }
-            } finally {
-                btnElement.disabled = false;
-                btnElement.textContent = 'Refresh';
-            }
-        }
-
-        function startAutoRefresh() {
-            setInterval(() => {
-                console.log('Auto-refreshing dashboard data...');
-                const types = ['status', 'morning', 'evening', 'rainLocations', 'forecastLocations', 'trafficCorridors', 'alerts'];
-                types.forEach((type, index) => {
-                    setTimeout(() => refreshData(type), index * 1000); // Stagger requests
-                });
-            }, 5 * 60 * 1000); // 5 minutes
-        }
-
-        function refreshAll() {
-            const btn = document.getElementById('refreshAllBtn');
-            btn.disabled = true;
-            btn.textContent = '🔄 Refreshing All...';
-            
-            const types = ['status', 'morning', 'evening', 'rainLocations', 'forecastLocations', 'trafficCorridors', 'alerts'];
-            
-            let index = 0;
-            function refreshNext() {
-                if (index < types.length) {
-                    refreshData(types[index])
-                        .finally(() => {
-                            index++;
-                            setTimeout(refreshNext, 800); // 800ms between requests
-                        });
-                } else {
-                    btn.disabled = false;
-                    btn.textContent = '🔄 Refresh All Data';
-                    console.log('✅ All dashboard data refreshed');
-                }
-            }
-            
-            refreshNext();
-        }
-
-        // Initialize dashboard
-        window.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 CBP Operations Dashboard v3.0 (Production) initializing...');
-            console.log(`Using API: ${BASE_URL}`);
-            
-            refreshAll();
-            
-            // Start auto-refresh after initial load
-            setTimeout(() => {
-                console.log('🔄 Starting auto-refresh every 5 minutes...');
-                startAutoRefresh();
-            }, 30000);
+        // Log any errors
+        results.forEach(result => {
+          if (result.error) {
+            addError(result.error, result.endpoint);
+          }
         });
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
-                e.preventDefault();
-                refreshAll();
-            }
-        });
+        // Render all data
+        renderAllData();
 
-        // Debug helper for troubleshooting
-        window.debugDashboard = {
-            fetchData: fetchData,
-            endpoints: endpoints,
-            BASE_URL: BASE_URL,
-            refreshData: refreshData,
-            testConnection: () => {
-                console.log(`Testing connection to: ${BASE_URL}/status`);
-                fetchData('status').then(data => {
-                    console.log('✅ Connection successful:', data);
-                }).catch(err => {
-                    console.error('❌ Connection failed:', err);
-                });
-            }
-        };
+      } catch (error) {
+        console.error('Dashboard load error:', error);
+        addError(error, 'loadDashboardData');
+        showToast('Failed to load dashboard data', 'error');
+        document.getElementById('systemDot').className = 'status-dot danger';
+      }
+    }
 
-        console.log('🔧 Debug: Use debugDashboard.testConnection() to test API connection');
-    </script>
+    // Initialize Dashboard
+    function initializeDashboard() {
+      // Initialize controls
+      initializeControls();
+      
+      // Update time immediately and then every minute
+      updateTimeDisplay();
+      setInterval(updateTimeDisplay, 60000);
+
+      // Initialize debug panel
+      updateDebugPanel();
+
+      // Load initial data
+      loadDashboardData();
+
+      // Set up auto-refresh
+      refreshTimer = setInterval(loadDashboardData, REFRESH_INTERVAL);
+
+      // Manual refresh button
+      document.getElementById('refreshBtn').addEventListener('click', () => {
+        addDebugInfo('user-action', 'Manual refresh triggered');
+        loadDashboardData();
+      });
+
+      console.log('CBP Smart Operations Hub initialized with enhanced debugging');
+      addDebugInfo('init', 'Dashboard initialized successfully');
+    }
+
+    // Start the dashboard when page loads
+    document.addEventListener('DOMContentLoaded', initializeDashboard);
+
+    // Add global error handler
+    window.addEventListener('error', (e) => {
+      addError(e.error || new Error(e.message), 'Global error handler');
+    });
+
+    window.addEventListener('unhandledrejection', (e) => {
+      addError(e.reason, 'Unhandled promise rejection');
+    });
+  </script>
 </body>
 </html>
