@@ -1,2196 +1,1100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="color-scheme" content="light dark">
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CBP Smart Operations Hub</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    :root {
-      --primary-bg: #0a0e1a;
-      --secondary-bg: #1a1f3a;
-      --card-bg: #1e293b;
-      --accent-bg: #2563eb;
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --info: #06b6d4;
-      --border: #334155;
-      --shadow: rgba(0, 0, 0, 0.3);
-      --glass-bg: rgba(30, 41, 59, 0.8);
-      --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    }
-
-    @media (prefers-color-scheme: light) {
-      :root {
-        --primary-bg: #f8fafc;
-        --secondary-bg: #e2e8f0;
-        --card-bg: #ffffff;
-        --text-primary: #1e293b;
-        --text-secondary: #475569;
-        --text-muted: #64748b;
-        --border: #e2e8f0;
-        --shadow: rgba(0, 0, 0, 0.1);
-        --glass-bg: rgba(255, 255, 255, 0.9);
-      }
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--primary-bg);
-      color: var(--text-primary);
-      line-height: 1.6;
-      overflow-x: hidden;
-    }
-
-    /* Animated Background */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
-                  radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%),
-                  radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
-      z-index: -1;
-      animation: backgroundMove 20s ease-in-out infinite;
-    }
-
-    @keyframes backgroundMove {
-      0%, 100% { transform: translateX(0) translateY(0); }
-      25% { transform: translateX(-20px) translateY(-20px); }
-      50% { transform: translateX(20px) translateY(-10px); }
-      75% { transform: translateX(-10px) translateY(10px); }
-    }
-
-    /* Header */
-    .header {
-      background: var(--glass-bg);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border);
-      padding: 1rem 2rem;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .header-content {
-      max-width: 1400px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      align-items: center;
-      gap: 2rem;
-    }
-
-    .header-title {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .header-icon {
-      width: 50px;
-      height: 50px;
-      background: var(--gradient-primary);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 1.5rem;
-    }
-
-    .header-text h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 0.25rem;
-    }
-
-    .header-text p {
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-    }
-
-    .time-display {
-      text-align: center;
-      padding: 0.75rem 1.5rem;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      box-shadow: 0 4px 6px var(--shadow);
-    }
-
-    .current-time {
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-    }
-
-    .current-period {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .system-status {
-      display: flex;
-      gap: 0.75rem;
-    }
-
-    .status-indicator {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 0.875rem;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--success);
-      animation: pulse 2s infinite;
-    }
-
-    .status-dot.warning { background: var(--warning); }
-    .status-dot.danger { background: var(--danger); }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    /* Main Container */
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-
-    /* Control Panel */
-    .control-panel {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      margin-bottom: 2rem;
-      overflow: hidden;
-      box-shadow: 0 4px 6px var(--shadow);
-    }
-
-    .control-header {
-      padding: 1.5rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: linear-gradient(135deg, var(--card-bg) 0%, rgba(37, 99, 235, 0.1) 100%);
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .control-header:hover {
-      background: linear-gradient(135deg, var(--card-bg) 0%, rgba(37, 99, 235, 0.15) 100%);
-    }
-
-    .control-title {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      font-size: 1.125rem;
-      font-weight: 600;
-    }
-
-    .control-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.25rem;
-      background: linear-gradient(135deg, #a29bfe, #6c5ce7);
-      color: white;
-    }
-
-    .control-toggle {
-      font-size: 1.25rem;
-      color: var(--text-secondary);
-      transition: transform 0.3s ease;
-    }
-
-    .control-toggle.expanded {
-      transform: rotate(180deg);
-    }
-
-    .control-content {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
-
-    .control-content.expanded {
-      max-height: 400px;
-    }
-
-    .control-options {
-      padding: 1.5rem;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-    }
-
-    .option-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .option-label {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .option-buttons {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .option-btn {
-      padding: 0.5rem 1rem;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-secondary);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-
-    .option-btn:hover {
-      border-color: var(--accent-bg);
-      color: var(--text-primary);
-    }
-
-    .option-btn.active {
-      background: var(--accent-bg);
-      border-color: var(--accent-bg);
-      color: white;
-    }
-
-    .custom-select {
-      padding: 0.75rem;
-      border: 1px solid var(--border);
-      background: var(--card-bg);
-      color: var(--text-primary);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .custom-select:hover {
-      border-color: var(--accent-bg);
-    }
-
-    /* Priority Banner */
-    .priority-banner {
-      background: var(--gradient-secondary);
-      border-radius: 16px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      color: white;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-    }
-
-    .priority-banner::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -20%;
-      width: 300px;
-      height: 300px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-    }
-
-    .priority-content {
-      position: relative;
-      z-index: 1;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      align-items: center;
-      gap: 2rem;
-    }
-
-    .priority-text h2 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-    }
-
-    .priority-text p {
-      font-size: 1rem;
-      opacity: 0.9;
-    }
-
-    .priority-actions {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .btn-primary {
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-
-    .btn-primary:hover {
-      background: rgba(255, 255, 255, 0.3);
-      transform: translateY(-2px);
-    }
-
-    /* Card Grid */
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 6px var(--shadow);
-      position: relative;
-    }
-
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 25px var(--shadow);
-    }
-
-    .card.expanded {
-      grid-column: 1 / -1;
-    }
-
-    .card-header {
-      padding: 1.5rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: linear-gradient(135deg, var(--card-bg) 0%, rgba(37, 99, 235, 0.1) 100%);
-    }
-
-    .card-title {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      font-size: 1.125rem;
-      font-weight: 600;
-    }
-
-    .card-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.25rem;
-    }
-
-    .card-icon.traffic { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
-    .card-icon.weather { background: linear-gradient(135deg, #74b9ff, #0984e3); }
-    .card-icon.schedule { background: linear-gradient(135deg, #a29bfe, #6c5ce7); }
-    .card-icon.alerts { background: linear-gradient(135deg, #ffeaa7, #fdcb6e); }
-
-    .card-controls {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .expand-btn {
-      width: 36px;
-      height: 36px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-secondary);
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-    }
-
-    .expand-btn:hover {
-      border-color: var(--accent-bg);
-      color: var(--accent-bg);
-    }
-
-    .card-badge {
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .badge-active { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-    .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-    .badge-inactive { background: rgba(148, 163, 184, 0.2); color: var(--text-secondary); }
-
-    .card-content {
-      padding: 1.5rem;
-    }
-
-    .card-content.expanded {
-      max-height: none;
-      padding: 2rem;
-    }
-
-    /* Traffic Cards */
-    .traffic-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem;
-      border-radius: 12px;
-      background: var(--glass-bg);
-      border: 1px solid var(--border);
-      margin-bottom: 0.75rem;
-      transition: all 0.3s ease;
-    }
-
-    .traffic-item:hover {
-      transform: translateX(4px);
-      border-color: var(--accent-bg);
-    }
-
-    .traffic-info {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .traffic-indicator {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    .traffic-indicator.smooth { background: var(--success); }
-    .traffic-indicator.moderate { background: var(--warning); }
-    .traffic-indicator.heavy { background: var(--danger); }
-
-    .traffic-details h4 {
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-    }
-
-    .traffic-details p {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-    }
-
-    .traffic-stats {
-      text-align: right;
-    }
-
-    .eta-time {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--accent-bg);
-    }
-
-    .traffic-speed {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-    }
-
-    /* Weather Cards */
-    .weather-section {
-      margin-bottom: 1.5rem;
-    }
-
-    .weather-section:last-child {
-      margin-bottom: 0;
-    }
-
-    .weather-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 1rem;
-    }
-
-    .weather-item {
-      text-align: center;
-      padding: 1rem;
-      border-radius: 12px;
-      background: var(--glass-bg);
-      border: 1px solid var(--border);
-      transition: all 0.3s ease;
-      position: relative;
-    }
-
-    .weather-item:hover {
-      transform: translateY(-2px);
-      border-color: var(--info);
-    }
-
-    .weather-icon {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .weather-time {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-      margin-bottom: 0.5rem;
-    }
-
-    .weather-temp {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
-
-    .weather-desc {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      margin-top: 0.25rem;
-    }
-
-    .expressway-weather {
-      display: grid;
-      gap: 0.75rem;
-    }
-
-    /* Schedule Cards */
-    .schedule-item {
-      display: flex;
-      align-items: center;
-      padding: 1rem;
-      border-radius: 12px;
-      background: var(--glass-bg);
-      border: 1px solid var(--border);
-      margin-bottom: 0.75rem;
-      transition: all 0.3s ease;
-      position: relative;
-    }
-
-    .schedule-item.completed {
-      opacity: 0.6;
-      background: rgba(148, 163, 184, 0.1);
-    }
-
-    .schedule-item.active {
-      border-color: var(--accent-bg);
-      background: rgba(37, 99, 235, 0.1);
-    }
-
-    .schedule-item.upcoming {
-      border-color: var(--success);
-      background: rgba(16, 185, 129, 0.1);
-    }
-
-    .schedule-time {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--accent-bg);
-      min-width: 80px;
-    }
-
-    .schedule-details {
-      flex: 1;
-      margin-left: 1rem;
-    }
-
-    .schedule-route {
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-    }
-
-    .schedule-locations {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-    }
-
-    .schedule-status {
-      padding: 0.25rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .status-completed { background: rgba(148, 163, 184, 0.2); color: var(--text-secondary); }
-    .status-active { background: rgba(37, 99, 235, 0.2); color: var(--accent-bg); }
-    .status-upcoming { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-
-    /* Chart Container */
-    .chart-container {
-      height: 200px;
-      margin-top: 1rem;
-      position: relative;
-    }
-
-    .chart-container.expanded {
-      height: 400px;
-    }
-
-    /* Alert Items */
-    .alert-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      padding: 1rem;
-      border-radius: 12px;
-      background: var(--glass-bg);
-      border: 1px solid var(--border);
-      margin-bottom: 0.75rem;
-    }
-
-    .alert-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.25rem;
-      flex-shrink: 0;
-    }
-
-    .alert-icon.high { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-    .alert-icon.medium { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-    .alert-icon.low { background: rgba(6, 182, 212, 0.2); color: var(--info); }
-
-    .alert-content {
-      flex: 1;
-    }
-
-    .alert-title {
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-    }
-
-    .alert-message {
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-      line-height: 1.5;
-    }
-
-    .alert-time {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 0.5rem;
-    }
-
-    /* Loading States */
-    .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      color: var(--text-secondary);
-    }
-
-    .spinner {
-      width: 24px;
-      height: 24px;
-      border: 2px solid var(--border);
-      border-top: 2px solid var(--accent-bg);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-right: 0.5rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Debug Panel */
-    .debug-panel {
-      position: fixed;
-      top: 100px;
-      right: 20px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-      max-width: 300px;
-      font-size: 0.75rem;
-      z-index: 1000;
-      display: none;
-    }
-
-    .debug-panel.show {
-      display: block;
-    }
-
-    .debug-title {
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: var(--text-primary);
-    }
-
-    .debug-item {
-      margin-bottom: 0.25rem;
-      color: var(--text-secondary);
-    }
-
-    .debug-error {
-      color: var(--danger);
-    }
-
-    .debug-success {
-      color: var(--success);
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      .container {
-        padding: 1rem;
-      }
-      
-      .header-content {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-        text-align: center;
-      }
-      
-      .priority-content {
-        grid-template-columns: 1fr;
-        text-align: center;
-      }
-      
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .control-options {
-        grid-template-columns: 1fr;
-      }
-
-      .debug-panel {
-        position: relative;
-        top: auto;
-        right: auto;
-        margin: 1rem 0;
-        max-width: 100%;
-      }
-    }
-
-    /* Toast Notifications */
-    .toast {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1rem 1.5rem;
-      box-shadow: 0 8px 25px var(--shadow);
-      display: none;
-      z-index: 1000;
-      max-width: 400px;
-    }
-
-    .toast.success { border-left: 4px solid var(--success); }
-    .toast.warning { border-left: 4px solid var(--warning); }
-    .toast.error { border-left: 4px solid var(--danger); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBP Operations Dashboard - Enhanced v2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1.5rem;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            letter-spacing: -0.02em;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+            margin-top: 0.8rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4CAF50;
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2.5rem;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 10px 40px rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(8px);
+        }
+
+        .controls h3 {
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        select, button {
+            padding: 1rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        select:focus, button:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .card h3 {
+            margin-bottom: 1.5rem;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Schedule Styles */
+        .schedule-filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.7rem 1.2rem;
+            border: 2px solid #e1e8ed;
+            background: white;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .filter-btn:hover:not(.active) {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .route-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.2rem;
+            max-height: 550px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .route-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .route-grid::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .route-grid::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .route-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 1.3rem;
+            border-left: 5px solid #28a745;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .route-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .route-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .route-card.inbound {
+            border-left-color: #007bff;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+
+        .route-card.outbound {
+            border-left-color: #28a745;
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+        }
+
+        .route-time {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.7rem;
+        }
+
+        .route-details {
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 0.6rem;
+        }
+
+        .route-direction {
+            font-size: 0.85rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            display: inline-block;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .inbound-tag {
+            background: rgba(33, 150, 243, 0.15);
+            color: #1976d2;
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+
+        .outbound-tag {
+            background: rgba(76, 175, 80, 0.15);
+            color: #388e3c;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        /* Weather Styles */
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.2rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .weather-location {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(33, 150, 243, 0.2);
+        }
+
+        .weather-location h4 {
+            margin-bottom: 1rem;
+            color: #1565c0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .weather-current {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .current-display {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .weather-icon {
+            font-size: 2rem;
+        }
+
+        .current-temp {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #1565c0;
+        }
+
+        .current-desc {
+            color: #666;
+            font-size: 0.9rem;
+            margin-left: 3rem;
+        }
+
+        .forecast-header {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1565c0;
+            margin-bottom: 0.7rem;
+        }
+
+        .hourly-forecast {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.7rem;
+        }
+
+        .forecast-hour {
+            text-align: center;
+            padding: 0.8rem 0.5rem;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 10px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .forecast-hour:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-2px);
+        }
+
+        .forecast-time {
+            font-weight: 600;
+            color: #1565c0;
+            margin-bottom: 0.3rem;
+        }
+
+        .forecast-icon {
+            font-size: 1.2rem;
+            margin: 0.3rem 0;
+        }
+
+        .forecast-temp {
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Traffic Styles */
+        .traffic-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .traffic-section {
+            padding: 1.5rem;
+            border-radius: 15px;
+            border: 2px solid transparent;
+        }
+
+        .inbound-section {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: #2196f3;
+        }
+
+        .outbound-section {
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+            border-color: #4caf50;
+        }
+
+        .traffic-section h4 {
+            margin-bottom: 1.2rem;
+            text-align: center;
+            font-size: 1.2rem;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .corridor-item {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .corridor-item:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateX(3px);
+        }
+
+        .corridor-info {
+            flex: 1;
+        }
+
+        .corridor-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.3rem;
+        }
+
+        .corridor-details {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .corridor-speed {
+            font-size: 0.9rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 15px;
+            font-weight: 600;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .speed-smooth { 
+            background: linear-gradient(135deg, #d4edda, #c3e6cb); 
+            color: #155724; 
+            border: 1px solid #b8e6c1;
+        }
+        .speed-moderate { 
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7); 
+            color: #856404; 
+            border: 1px solid #f9e79f;
+        }
+        .speed-heavy { 
+            background: linear-gradient(135deg, #f8d7da, #f5b7b1); 
+            color: #721c24; 
+            border: 1px solid #f1948a;
+        }
+        .speed-jam { 
+            background: linear-gradient(135deg, #dc3545, #c82333); 
+            color: white; 
+            border: 1px solid #bd2130;
+        }
+
+        /* Alerts */
+        .alerts-container {
+            margin-bottom: 1rem;
+        }
+
+        .alert {
+            padding: 1.2rem;
+            border-radius: 12px;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .alert:hover {
+            transform: translateX(3px);
+        }
+
+        .alert-icon {
+            font-size: 1.2rem;
+            margin-top: 0.2rem;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-message {
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+        }
+
+        .alert-time {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .alert-high { 
+            background: linear-gradient(135deg, #f8d7da, #f5b7b1); 
+            border-left: 4px solid #dc3545; 
+            color: #721c24;
+        }
+        .alert-medium { 
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7); 
+            border-left: 4px solid #ffc107; 
+            color: #856404;
+        }
+        .alert-low { 
+            background: linear-gradient(135deg, #d4edda, #c3e6cb); 
+            border-left: 4px solid #28a745; 
+            color: #155724;
+        }
+
+        /* Loading States */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .traffic-sections {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+            
+            .control-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .route-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .weather-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .hourly-forecast {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <!-- Debug Panel -->
-  <div class="debug-panel" id="debugPanel">
-    <div class="debug-title">API Debug Info</div>
-    <div id="debugContent"></div>
-    <button onclick="toggleDebug()" style="margin-top: 0.5rem; padding: 0.25rem 0.5rem; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary); border-radius: 4px; cursor: pointer;">Hide</button>
-  </div>
-
-  <!-- Header -->
-  <header class="header">
-    <div class="header-content">
-      <div class="header-title">
-        <div class="header-icon">
-          <i class="fas fa-bus"></i>
-        </div>
-        <div class="header-text">
-          <h1>CBP Smart Operations Hub</h1>
-          <p>Intelligent Transportation Management System</p>
-        </div>
-      </div>
-      
-      <div class="time-display">
-        <div class="current-time" id="currentTime">--:--</div>
-        <div class="current-period" id="currentPeriod">Loading...</div>
-      </div>
-      
-      <div class="system-status" id="systemStatus">
-        <div class="status-indicator">
-          <div class="status-dot" id="systemDot"></div>
-          <span>System</span>
-        </div>
-        <div class="status-indicator">
-          <button onclick="toggleDebug()" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.75rem;">Debug</button>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Content -->
-  <div class="container">
-    <!-- Control Panel -->
-    <div class="control-panel">
-      <div class="control-header" id="controlHeader">
-        <div class="control-title">
-          <div class="control-icon">
-            <i class="fas fa-cog"></i>
-          </div>
-          <span>Monitoring Controls</span>
-        </div>
-        <div class="control-toggle" id="controlToggle">
-          <i class="fas fa-chevron-down"></i>
-        </div>
-      </div>
-      <div class="control-content" id="controlContent">
-        <div class="control-options">
-          <div class="option-group">
-            <div class="option-label">Time Priority</div>
-            <div class="option-buttons">
-              <button class="option-btn active" data-priority="auto">Auto (Current Time)</button>
-              <button class="option-btn" data-priority="morning">Morning Rush</button>
-              <button class="option-btn" data-priority="evening">Evening Rush</button>
-              <button class="option-btn" data-priority="all">All Day</button>
+    <div class="header">
+        <h1>🚌 CBP Operations Dashboard</h1>
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <span>System Online</span>
             </div>
-          </div>
-          
-          <div class="option-group">
-            <div class="option-label">Route Filter</div>
-            <select class="custom-select" id="routeFilter">
-              <option value="all">All Routes</option>
-              <option value="mrt">MRT Connections</option>
-              <option value="residential">Residential Areas</option>
-              <option value="commercial">Commercial Districts</option>
-              <option value="express">Express Routes</option>
-            </select>
-          </div>
-          
-          <div class="option-group">
-            <div class="option-label">Data Display</div>
-            <div class="option-buttons">
-              <button class="option-btn active" data-display="summary">Summary View</button>
-              <button class="option-btn" data-display="detailed">Detailed View</button>
-              <button class="option-btn" data-display="compact">Compact View</button>
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <span>Real-time Data</span>
             </div>
-          </div>
-          
-          <div class="option-group">
-            <div class="option-label">Update Frequency</div>
-            <select class="custom-select" id="updateFrequency">
-              <option value="300000">5 Minutes</option>
-              <option value="120000">2 Minutes</option>
-              <option value="60000">1 Minute</option>
-              <option value="30000">30 Seconds</option>
-            </select>
-          </div>
+            <div class="status-item">
+                <div class="status-dot"></div>
+                <span>All Services Active</span>
+            </div>
         </div>
-      </div>
     </div>
 
-    <!-- Priority Banner -->
-    <div class="priority-banner" id="priorityBanner">
-      <div class="priority-content">
-        <div class="priority-text">
-          <h2 id="priorityTitle">Initializing Smart Operations...</h2>
-          <p id="priorityMessage">Setting up time-aware routing and priority management</p>
-        </div>
-        <div class="priority-actions">
-          <button class="btn btn-primary" id="refreshBtn">
-            <i class="fas fa-sync-alt"></i>
-            Refresh Data
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Dashboard Grid -->
-    <div class="dashboard-grid">
-      <!-- Active Schedule Card -->
-      <div class="card" id="scheduleCard">
-        <div class="card-header">
-          <div class="card-title">
-            <div class="card-icon schedule">
-              <i class="fas fa-clock"></i>
-            </div>
-            <span>Active Schedule</span>
-          </div>
-          <div class="card-controls">
-            <div class="card-badge" id="scheduleBadge">Live</div>
-            <button class="expand-btn" data-card="schedule">
-              <i class="fas fa-expand"></i>
-            </button>
-          </div>
-        </div>
-        <div class="card-content" id="scheduleContent">
-          <div class="loading">
-            <div class="spinner"></div>
-            Loading schedule data...
-          </div>
-        </div>
-      </div>
-
-      <!-- Traffic Intelligence Card -->
-      <div class="card" id="trafficCard">
-        <div class="card-header">
-          <div class="card-title">
-            <div class="card-icon traffic">
-              <i class="fas fa-road"></i>
-            </div>
-            <span>Traffic Intelligence</span>
-          </div>
-          <div class="card-controls">
-            <div class="card-badge" id="trafficBadge">Real-time</div>
-            <button class="expand-btn" data-card="traffic">
-              <i class="fas fa-expand"></i>
-            </button>
-          </div>
-        </div>
-        <div class="card-content" id="trafficContent">
-          <div class="loading">
-            <div class="spinner"></div>
-            Analyzing traffic patterns...
-          </div>
-        </div>
-      </div>
-
-      <!-- Weather Forecast Card -->
-      <div class="card" id="weatherCard">
-        <div class="card-header">
-          <div class="card-title">
-            <div class="card-icon weather">
-              <i class="fas fa-cloud-rain"></i>
-            </div>
-            <span>Weather Impact</span>
-          </div>
-          <div class="card-controls">
-            <div class="card-badge" id="weatherBadge">Forecast</div>
-            <button class="expand-btn" data-card="weather">
-              <i class="fas fa-expand"></i>
-            </button>
-          </div>
-        </div>
-        <div class="card-content" id="weatherContent">
-          <div class="loading">
-            <div class="spinner"></div>
-            Fetching weather data...
-          </div>
-        </div>
-      </div>
-
-      <!-- Smart Alerts Card -->
-      <div class="card" id="alertsCard">
-        <div class="card-header">
-          <div class="card-title">
-            <div class="card-icon alerts">
-              <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <span>Smart Alerts</span>
-          </div>
-          <div class="card-controls">
-            <div class="card-badge" id="alertsBadge">Active</div>
-            <button class="expand-btn" data-card="alerts">
-              <i class="fas fa-expand"></i>
-            </button>
-          </div>
-        </div>
-        <div class="card-content" id="alertsContent">
-          <div class="loading">
-            <div class="spinner"></div>
-            Loading alert systems...
-          </div>
-        </div>
-      </div>
-
-      <!-- Traffic Analytics Chart -->
-      <div class="card" style="grid-column: 1 / -1;" id="chartCard">
-        <div class="card-header">
-          <div class="card-title">
-            <div class="card-icon traffic">
-              <i class="fas fa-chart-line"></i>
-            </div>
-            <span>Traffic Flow Analytics</span>
-          </div>
-          <div class="card-controls">
-            <div class="card-badge badge-active">Live Data</div>
-            <button class="expand-btn" data-card="chart">
-              <i class="fas fa-expand"></i>
-            </button>
-          </div>
-        </div>
-        <div class="card-content">
-          <div class="chart-container" id="chartContainer">
-            <canvas id="trafficChart"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Notification -->
-  <div class="toast" id="toast">
-    <div id="toastMessage"></div>
-  </div>
-
-  <script>
-    // Configuration with better error handling
-    const API_BASE = 'https://cbp-ops-api.o-shanneng.workers.dev';
-    let REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
-    
-    // Debug state
-    let debugInfo = {
-      lastUpdate: null,
-      apiCalls: [],
-      errors: []
-    };
-
-    // User preferences
-    let userPrefs = {
-      priority: 'auto',
-      routeFilter: 'all',
-      display: 'summary',
-      updateFreq: 300000
-    };
-    
-    // Global state
-    let currentData = {};
-    let refreshTimer;
-    let trafficChart;
-    let expandedCards = new Set();
-
-    // Debug functions
-    function addDebugInfo(type, message, data = null) {
-      const timestamp = new Date().toISOString();
-      debugInfo.apiCalls.push({
-        timestamp,
-        type,
-        message,
-        data: data ? JSON.stringify(data).substring(0, 200) + '...' : null
-      });
-      
-      // Keep only last 10 entries
-      if (debugInfo.apiCalls.length > 10) {
-        debugInfo.apiCalls.shift();
-      }
-      
-      updateDebugPanel();
-    }
-
-    function addError(error, context = '') {
-      const timestamp = new Date().toISOString();
-      debugInfo.errors.push({
-        timestamp,
-        error: error.message || error.toString(),
-        context
-      });
-      
-      // Keep only last 5 errors
-      if (debugInfo.errors.length > 5) {
-        debugInfo.errors.shift();
-      }
-      
-      updateDebugPanel();
-    }
-
-    function updateDebugPanel() {
-      const content = document.getElementById('debugContent');
-      if (!content) return;
-      
-      let html = `
-        <div class="debug-item">Last Update: ${debugInfo.lastUpdate || 'Never'}</div>
-        <div class="debug-item">API Base: ${API_BASE}</div>
-        <hr style="margin: 0.5rem 0; border: none; border-top: 1px solid var(--border);">
-      `;
-      
-      // Show recent API calls
-      html += '<strong>Recent API Calls:</strong><br>';
-      debugInfo.apiCalls.slice(-3).forEach(call => {
-        const className = call.type === 'error' ? 'debug-error' : 
-                         call.type === 'success' ? 'debug-success' : '';
-        html += `<div class="debug-item ${className}">${call.timestamp.split('T')[1].split('.')[0]} - ${call.message}</div>`;
-      });
-      
-      // Show errors
-      if (debugInfo.errors.length > 0) {
-        html += '<br><strong>Recent Errors:</strong><br>';
-        debugInfo.errors.slice(-2).forEach(error => {
-          html += `<div class="debug-item debug-error">${error.timestamp.split('T')[1].split('.')[0]} - ${error.context}: ${error.error}</div>`;
-        });
-      }
-      
-      content.innerHTML = html;
-    }
-
-    function toggleDebug() {
-      const panel = document.getElementById('debugPanel');
-      panel.classList.toggle('show');
-    }
-
-    // Utility Functions
-    function getCurrentTimeInfo() {
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      
-      let period = 'Night Operations';
-      let priority = 'monitoring';
-      
-      if (hours >= 6 && hours < 10) {
-        period = 'Morning Rush';
-        priority = 'morning-pickup';
-      } else if (hours >= 10 && hours < 17) {
-        period = 'Day Operations';
-        priority = 'day-service';
-      } else if (hours >= 17 && hours < 21) {
-        period = 'Evening Rush';
-        priority = 'evening-pickup';
-      }
-      
-      return {
-        time: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`,
-        period,
-        priority,
-        hours,
-        minutes
-      };
-    }
-
-    function getEffectivePriority() {
-      if (userPrefs.priority === 'auto') {
-        return getCurrentTimeInfo().priority;
-      }
-      return userPrefs.priority;
-    }
-
-    function showToast(message, type = 'info') {
-      const toast = document.getElementById('toast');
-      const toastMessage = document.getElementById('toastMessage');
-      
-      toast.className = `toast ${type}`;
-      toastMessage.textContent = message;
-      toast.style.display = 'block';
-      
-      setTimeout(() => {
-        toast.style.display = 'none';
-      }, 4000);
-    }
-
-    function updateTimeDisplay() {
-      const timeInfo = getCurrentTimeInfo();
-      document.getElementById('currentTime').textContent = timeInfo.time;
-      document.getElementById('currentPeriod').textContent = timeInfo.period;
-      
-      updatePriorityBanner(timeInfo);
-    }
-
-    function updatePriorityBanner(timeInfo) {
-      const title = document.getElementById('priorityTitle');
-      const message = document.getElementById('priorityMessage');
-      const effectivePriority = getEffectivePriority();
-      
-      switch(effectivePriority) {
-        case 'morning-pickup':
-        case 'morning':
-          title.textContent = '🌅 Morning Rush Priority';
-          message.textContent = 'Showing inbound routes from residential areas to CBP. Focus on MRT connections and major pickup points.';
-          break;
-        case 'evening-pickup':
-        case 'evening':
-          title.textContent = '🌆 Evening Rush Priority';
-          message.textContent = 'Showing outbound routes from CBP to city centers. Prioritizing high-capacity routes and traffic flow.';
-          break;
-        case 'day-service':
-          title.textContent = '☀️ Day Service Mode';
-          message.textContent = 'Limited shuttle service between key locations. Express routes to major MRT stations and commercial areas.';
-          break;
-        case 'all':
-          title.textContent = '🌐 All-Day Monitoring';
-          message.textContent = 'Comprehensive view of all operations. Monitoring all routes and time periods simultaneously.';
-          break;
-        default:
-          title.textContent = '🌙 Night Operations';
-          message.textContent = 'Minimal service mode. System monitoring and preparation for next day operations.';
-      }
-    }
-
-    // Helper function to convert time string to minutes since midnight
-    function convertTimeToMinutes(timeString) {
-      if (!timeString || timeString === '--:--') return 0;
-      
-      const [hourStr, minuteStr] = timeString.split(':');
-      const hours = parseInt(hourStr, 10) || 0;
-      const minutes = parseInt(minuteStr, 10) || 0;
-      
-      return hours * 60 + minutes;
-    }
-
-    // Helper function to get appropriate no-data message
-    function getNoDataMessage(priority, timeInfo) {
-      const currentHour = timeInfo.hours;
-      
-      switch (priority) {
-        case 'morning-pickup':
-        case 'morning':
-          return 'Waiting for morning schedule data from API. Morning pickup typically runs 06:30-10:00.';
-        
-        case 'evening-pickup':
-        case 'evening':
-          if (currentHour < 17) {
-            return `Evening pickup service starts at 17:30. Currently in ${timeInfo.period.toLowerCase()}.`;
-          }
-          return 'Waiting for evening schedule data from API. Evening pickup runs 17:30-20:15.';
-        
-        case 'day-service':
-          return 'Limited day service available 12:00-16:00. Checking for shuttle routes.';
-        
-        default:
-          return 'No schedule data available. Check API connection or try "All Day" view.';
-      }
-    }
-
-    // Control Panel Functions
-    function initializeControls() {
-      const controlHeader = document.getElementById('controlHeader');
-      const controlContent = document.getElementById('controlContent');
-      const controlToggle = document.getElementById('controlToggle');
-
-      controlHeader.addEventListener('click', () => {
-        const isExpanded = controlContent.classList.contains('expanded');
-        
-        if (isExpanded) {
-          controlContent.classList.remove('expanded');
-          controlToggle.classList.remove('expanded');
-        } else {
-          controlContent.classList.add('expanded');
-          controlToggle.classList.add('expanded');
-        }
-      });
-
-      // Priority buttons
-      document.querySelectorAll('[data-priority]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('[data-priority]').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          userPrefs.priority = btn.dataset.priority;
-          updateTimeDisplay();
-          renderAllData(); // Re-render with new priority
-          showToast(`Priority mode: ${btn.textContent}`, 'success');
-          addDebugInfo('user-action', `Changed priority to: ${btn.dataset.priority}`);
-        });
-      });
-
-      // Display mode buttons
-      document.querySelectorAll('[data-display]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('[data-display]').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          userPrefs.display = btn.dataset.display;
-          renderAllData();
-          showToast(`Display mode: ${btn.textContent}`, 'success');
-        });
-      });
-
-      // Route filter
-      document.getElementById('routeFilter').addEventListener('change', (e) => {
-        userPrefs.routeFilter = e.target.value;
-        renderAllData();
-        showToast(`Route filter: ${e.target.selectedOptions[0].textContent}`, 'success');
-      });
-
-      // Update frequency
-      document.getElementById('updateFrequency').addEventListener('change', (e) => {
-        const newInterval = parseInt(e.target.value);
-        REFRESH_INTERVAL = newInterval;
-        userPrefs.updateFreq = newInterval;
-        
-        clearInterval(refreshTimer);
-        refreshTimer = setInterval(loadDashboardData, REFRESH_INTERVAL);
-        showToast(`Update frequency: ${e.target.selectedOptions[0].textContent}`, 'success');
-      });
-
-      // Expand buttons
-      document.querySelectorAll('.expand-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const cardType = btn.dataset.card;
-          toggleCardExpansion(cardType);
-        });
-      });
-    }
-
-    function toggleCardExpansion(cardType) {
-      const card = document.getElementById(`${cardType}Card`);
-      const content = card.querySelector('.card-content');
-      const expandBtn = card.querySelector('.expand-btn i');
-      
-      if (expandedCards.has(cardType)) {
-        // Collapse
-        expandedCards.delete(cardType);
-        card.classList.remove('expanded');
-        content.classList.remove('expanded');
-        expandBtn.className = 'fas fa-expand';
-        
-        if (cardType === 'chart') {
-          document.getElementById('chartContainer').classList.remove('expanded');
-        }
-      } else {
-        // Expand
-        expandedCards.add(cardType);
-        card.classList.add('expanded');
-        content.classList.add('expanded');
-        expandBtn.className = 'fas fa-compress';
-        
-        if (cardType === 'chart') {
-          document.getElementById('chartContainer').classList.add('expanded');
-          setTimeout(() => {
-            if (trafficChart) {
-              trafficChart.resize();
-            }
-          }, 300);
-        }
-      }
-
-      // Re-render data for expanded view
-      renderAllData();
-    }
-
-    // Enhanced API Functions with better error handling
-    async function fetchJson(endpoint) {
-      const url = `${API_BASE}${endpoint}`;
-      addDebugInfo('request', `Fetching: ${endpoint}`);
-      
-      try {
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: { 
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          mode: 'cors'
-        });
-        
-        addDebugInfo('response', `${endpoint} - Status: ${response.status}`);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
-        }
-        
-        const data = await response.json();
-        addDebugInfo('success', `${endpoint} - Data received`, data);
-        
-        return data;
-      } catch (error) {
-        addError(error, `fetchJson(${endpoint})`);
-        console.error(`API Error (${endpoint}):`, error);
-        throw error;
-      }
-    }
-
-    // Test API connectivity
-    async function testApiConnectivity() {
-      addDebugInfo('test', 'Testing API connectivity...');
-      
-      try {
-        // Test with a simple fetch to the base URL
-        const response = await fetch(API_BASE, { 
-          method: 'GET',
-          mode: 'cors'
-        });
-        
-        addDebugInfo('test', `Base URL test - Status: ${response.status}`);
-        
-        // Test schedule endpoint specifically
-        const scheduleResponse = await fetch(`${API_BASE}/schedule`, {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' },
-          mode: 'cors'
-        });
-        
-        addDebugInfo('test', `Schedule endpoint - Status: ${scheduleResponse.status}`);
-        
-        if (scheduleResponse.ok) {
-          const data = await scheduleResponse.json();
-          addDebugInfo('success', 'Schedule endpoint working', data);
-          return true;
-        }
-        
-      } catch (error) {
-        addError(error, 'testApiConnectivity');
-        addDebugInfo('error', `API connectivity test failed: ${error.message}`);
-      }
-      
-      return false;
-    }
-
-    // Enhanced Schedule Rendering - Uses ACTUAL API Data Only
-    function renderSchedule(scheduleData, timeInfo) {
-      const container = document.getElementById('scheduleContent');
-      const badge = document.getElementById('scheduleBadge');
-      const isExpanded = expandedCards.has('schedule');
-      
-      addDebugInfo('render', `Rendering schedule - Routes: ${scheduleData?.routes?.length || 0}`);
-      
-      // Get current time in minutes since midnight for comparison
-      const currentTimeMinutes = timeInfo.hours * 60 + timeInfo.minutes;
-      const effectivePriority = getEffectivePriority();
-
-      // Use ONLY the actual data from the API - NO mock data generation
-      if (!scheduleData || !scheduleData.routes || scheduleData.routes.length === 0) {
-        // If no API data, show appropriate message
-        const noDataMessage = getNoDataMessage(effectivePriority, timeInfo);
-        container.innerHTML = `<div class="loading">${noDataMessage}</div>`;
-        badge.className = 'card-badge badge-inactive';
-        badge.textContent = 'No Schedule Data';
-        addDebugInfo('warning', 'No schedule data available');
-        return;
-      }
-
-      let relevantRoutes = [...scheduleData.routes];
-      addDebugInfo('filter', `Starting with ${relevantRoutes.length} routes`);
-
-      // Filter based on effective priority using ACTUAL route times
-      if (effectivePriority !== 'all') {
-        const originalCount = relevantRoutes.length;
-        relevantRoutes = relevantRoutes.filter(route => {
-          const routeTime = route.time || '00:00';
-          const [hourStr, minuteStr] = routeTime.split(':');
-          const routeHour = parseInt(hourStr, 10);
-          
-          switch (effectivePriority) {
-            case 'morning-pickup':
-            case 'morning':
-              return routeHour >= 6 && routeHour < 12;
-            case 'evening-pickup':
-            case 'evening':
-              return routeHour >= 17 && routeHour <= 21;
-            case 'day-service':
-              return routeHour >= 12 && routeHour < 17;
-            default:
-              return true;
-          }
-        });
-        addDebugInfo('filter', `Priority filter: ${originalCount} -> ${relevantRoutes.length} routes`);
-      }
-
-      // Apply route filter based on ACTUAL route data
-      if (userPrefs.routeFilter !== 'all') {
-        const originalCount = relevantRoutes.length;
-        relevantRoutes = relevantRoutes.filter(route => {
-          const routeName = (route.name || route.corridor || '').toLowerCase();
-          const pickupText = (Array.isArray(route.pickupPoints) ? 
-            route.pickupPoints.join(' ').toLowerCase() : 
-            (route.pickupPoints || '').toLowerCase());
-          
-          switch (userPrefs.routeFilter) {
-            case 'mrt':
-              return pickupText.includes('mrt') || routeName.includes('mrt');
-            case 'residential':
-              return pickupText.includes('punggol') || pickupText.includes('sengkang') || 
-                     pickupText.includes('woodlands') || pickupText.includes('bishan') ||
-                     routeName.includes('residential');
-            case 'commercial':
-              return pickupText.includes('dhoby') || pickupText.includes('city hall') || 
-                     pickupText.includes('stevens') || pickupText.includes('novena') ||
-                     pickupText.includes('marina') || pickupText.includes('raffles') ||
-                     routeName.includes('commercial');
-            case 'express':
-              return routeName.includes('express') || routeName.includes('cte') || 
-                     routeName.includes('kpe') || routeName.includes('aye');
-            default:
-              return true;
-          }
-        });
-        addDebugInfo('filter', `Route filter: ${originalCount} -> ${relevantRoutes.length} routes`);
-      }
-
-      // Sort routes by actual time
-      relevantRoutes.sort((a, b) => {
-        const timeA = convertTimeToMinutes(a.time || '00:00');
-        const timeB = convertTimeToMinutes(b.time || '00:00');
-        return timeA - timeB;
-      });
-
-      // Apply time-based filtering for current context
-      if (effectivePriority === 'morning-pickup' || effectivePriority === 'morning') {
-        const originalCount = relevantRoutes.length;
-        relevantRoutes = relevantRoutes.filter(route => {
-          const routeTimeMinutes = convertTimeToMinutes(route.time || '00:00');
-          return routeTimeMinutes >= (currentTimeMinutes - 60) && routeTimeMinutes <= 720; // 12:00
-        });
-        addDebugInfo('filter', `Morning time filter: ${originalCount} -> ${relevantRoutes.length} routes`);
-      } else if (effectivePriority === 'evening-pickup' || effectivePriority === 'evening') {
-        const originalCount = relevantRoutes.length;
-        relevantRoutes = relevantRoutes.filter(route => {
-          const routeTimeMinutes = convertTimeToMinutes(route.time || '00:00');
-          return routeTimeMinutes >= (currentTimeMinutes - 30) && routeTimeMinutes <= 1260; // 21:00
-        });
-        addDebugInfo('filter', `Evening time filter: ${originalCount} -> ${relevantRoutes.length} routes`);
-      }
-
-      // Limit routes based on view mode and expansion
-      const maxRoutes = isExpanded ? (userPrefs.display === 'detailed' ? 15 : 10) : 
-                      (userPrefs.display === 'compact' ? 3 : 5);
-      relevantRoutes = relevantRoutes.slice(0, maxRoutes);
-
-      if (relevantRoutes.length === 0) {
-        const noDataMessage = getNoDataMessage(effectivePriority, timeInfo);
-        container.innerHTML = `<div class="loading">${noDataMessage}</div>`;
-        badge.className = 'card-badge badge-inactive';
-        badge.textContent = 'No Active Routes';
-        addDebugInfo('warning', 'No routes after filtering');
-        return;
-      }
-
-      // Count active routes for badge
-      const activeRoutes = relevantRoutes.filter(route => {
-        const routeTimeMinutes = convertTimeToMinutes(route.time || '00:00');
-        return Math.abs(routeTimeMinutes - currentTimeMinutes) <= 30;
-      });
-
-      badge.className = activeRoutes.length > 0 ? 'card-badge badge-active' : 'card-badge badge-warning';
-      badge.textContent = `${relevantRoutes.length} Route${relevantRoutes.length > 1 ? 's' : ''}`;
-
-      const scheduleHTML = relevantRoutes.map(route => {
-        const routeTime = route.time || '--:--';
-        const routeName = route.name || route.corridor || 'Unknown Route';
-        
-        // Use EXACT pickup points from API data - no modification
-        let pickupDisplay = '';
-        if (Array.isArray(route.pickupPoints)) {
-          pickupDisplay = route.pickupPoints.join(' → ');
-        } else if (typeof route.pickupPoints === 'string') {
-          pickupDisplay = route.pickupPoints;
-        } else {
-          pickupDisplay = 'Route information unavailable';
-        }
-        
-        // Determine status based on current time with proper 24h parsing
-        const routeTimeMinutes = convertTimeToMinutes(routeTime);
-        const timeDifference = routeTimeMinutes - currentTimeMinutes;
-        
-        let status = 'upcoming';
-        let statusClass = 'status-upcoming';
-        let statusText = 'Upcoming';
-        
-        if (timeDifference < -30) {
-          status = 'completed';
-          statusClass = 'status-completed';
-          statusText = 'Completed';
-        } else if (Math.abs(timeDifference) <= 30) {
-          status = 'active';
-          statusClass = 'status-active';
-          statusText = 'Active Now';
-        } else if (timeDifference > 0 && timeDifference <= 60) {
-          statusText = `In ${Math.round(timeDifference)} min`;
-        }
-
-        // Format time display - keep exactly as received from API
-        const displayTime = routeTime;
-
-        return `
-          <div class="schedule-item ${status}">
-            <div class="schedule-time">${displayTime}</div>
-            <div class="schedule-details">
-              <div class="schedule-route">${routeName}</div>
-              <div class="schedule-locations">${pickupDisplay}</div>
-              ${userPrefs.display === 'detailed' && route.etaToCbpMin ? `<div class="schedule-locations" style="color: var(--info); font-size: 0.75rem;">ETA: ${route.etaToCbpMin} min</div>` : ''}
-              ${userPrefs.display === 'detailed' && route.capacity ? `<div class="schedule-locations" style="color: var(--text-muted); font-size: 0.75rem;">Capacity: ${route.capacity} seats</div>` : ''}
-              ${userPrefs.display === 'detailed' && route.routeType ? `<div class="schedule-locations" style="color: var(--text-muted); font-size: 0.75rem;">Type: ${route.routeType}</div>` : ''}
-            </div>
-            <div class="schedule-status ${statusClass}">${statusText}</div>
-          </div>
-        `;
-      }).join('');
-
-      container.innerHTML = scheduleHTML;
-      addDebugInfo('success', `Rendered ${relevantRoutes.length} schedule items`);
-    }
-
-    // Enhanced Weather Rendering with Location-Specific Forecasts
-    function renderWeather(weatherData) {
-      const container = document.getElementById('weatherContent');
-      const badge = document.getElementById('weatherBadge');
-      const isExpanded = expandedCards.has('weather');
-      
-      // Define key locations for CBP operations
-      const keyLocations = {
-        'CBP': { name: 'Changi Business Park', priority: 'high' },
-        'Jurong East': { name: 'Jurong East MRT', priority: 'high' },
-        'Clementi': { name: 'Clementi MRT', priority: 'high' },
-        'Dhoby Ghaut': { name: 'Dhoby Ghaut & City Hall', priority: 'high' },
-        'Novena': { name: 'Novena MRT', priority: 'high' },
-        'Bishan': { name: 'Bishan MRT', priority: 'medium' },
-        'Serangoon': { name: 'Serangoon MRT', priority: 'medium' },
-        'Punggol': { name: 'Punggol MRT', priority: 'medium' },
-        'Sengkang': { name: 'Sengkang MRT', priority: 'medium' },
-        'Woodlands': { name: 'Woodlands MRT', priority: 'medium' },
-        'Tanah Merah': { name: 'Tanah Merah MRT & Expo', priority: 'medium' }
-      };
-
-      const expressways = {
-        'PIE West': { name: 'PIE Western Corridor', zones: ['Jurong East', 'Clementi'] },
-        'PIE Central': { name: 'PIE Central Corridor', zones: ['Bishan', 'Novena', 'Dhoby Ghaut'] },
-        'PIE East': { name: 'PIE Eastern Corridor', zones: ['Tanah Merah'] },
-        'CTE': { name: 'Central Expressway', zones: ['Woodlands', 'Bishan', 'Novena'] },
-        'KPE': { name: 'Kallang-Paya Lebar Expressway', zones: ['Punggol', 'Sengkang'] },
-        'AYE': { name: 'Ayer Rajah Expressway', zones: ['Jurong East', 'Clementi'] }
-      };
-
-      if (!weatherData || !weatherData.locations) {
-        container.innerHTML = '<div class="loading">No weather data available</div>';
-        return;
-      }
-
-      // Create mock location-specific weather data based on the current weather
-      const baseWeather = Object.values(weatherData.locations)[0] || {};
-      const currentHour = new Date().getHours();
-      
-      let locationWeather = {};
-      let expresswayWeather = {};
-      let rainWarning = false;
-
-      // Generate location-specific weather with slight variations
-      Object.entries(keyLocations).forEach(([key, location], index) => {
-        const variation = (index % 3) - 1; // -1, 0, 1 for variation
-        
-        // Generate current weather condition
-        let condition = 'Partly Cloudy';
-        let temp = 32 + variation;
-        let icon = '🌤️';
-        
-        // Afternoon thunderstorms more likely
-        if (currentHour >= 14 && currentHour <= 18) {
-          if (Math.random() > 0.6) {
-            condition = 'Thunderstorms';
-            temp -= 2;
-            icon = '⛈️';
-            rainWarning = true;
-          }
-        } else if (currentHour >= 6 && currentHour <= 10) {
-          if (Math.random() > 0.7) {
-            condition = 'Morning Showers';
-            temp -= 1;
-            icon = '🌧️';
-            rainWarning = true;
-          }
-        }
-        
-        // Coastal areas (like CBP) tend to be slightly cooler
-        if (key === 'CBP' || key === 'Tanah Merah') {
-          temp -= 1;
-        }
-        
-        // Western areas tend to be slightly warmer
-        if (key === 'Jurong East' || key === 'Clementi') {
-          temp += 1;
-        }
-
-        locationWeather[key] = {
-          name: location.name,
-          priority: location.priority,
-          temp: temp,
-          condition: condition,
-          icon: icon,
-          humidity: 65 + variation * 5
-        };
-      });
-
-      // Generate expressway-specific weather for expanded view
-      if (isExpanded) {
-        Object.entries(expressways).forEach(([key, expressway]) => {
-          const avgTemp = Math.round(expressway.zones.reduce((sum, zone) => {
-            return sum + (locationWeather[zone]?.temp || 32);
-          }, 0) / expressway.zones.length);
-          
-          const hasRain = expressway.zones.some(zone => 
-            locationWeather[zone]?.condition.includes('Rain') || 
-            locationWeather[zone]?.condition.includes('Thunderstorm')
-          );
-          
-          expresswayWeather[key] = {
-            name: expressway.name,
-            zones: expressway.zones,
-            avgTemp: avgTemp,
-            condition: hasRain ? 'Rainy Conditions' : 'Fair Weather',
-            icon: hasRain ? '🌧️' : '🌤️',
-            impact: hasRain ? 'High' : 'Low'
-          };
-        });
-      }
-
-      // Filter locations based on current priority and expansion
-      let displayLocations = Object.entries(locationWeather);
-      
-      if (!isExpanded) {
-        // Show only high priority locations when collapsed
-        displayLocations = displayLocations.filter(([key, data]) => data.priority === 'high');
-        displayLocations = displayLocations.slice(0, 4);
-      } else {
-        // Show more locations when expanded
-        if (userPrefs.display === 'compact') {
-          displayLocations = displayLocations.slice(0, 6);
-        } else if (userPrefs.display === 'detailed') {
-          displayLocations = displayLocations.slice(0, 8);
-        } else {
-          displayLocations = displayLocations.slice(0, 6);
-        }
-      }
-
-      // Update badge
-      badge.className = rainWarning ? 'card-badge badge-warning' : 'card-badge badge-active';
-      badge.textContent = rainWarning ? 'Rain Alert' : 'Clear';
-
-      // Render location weather
-      let weatherHTML = `
-        <div class="weather-section">
-          <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px;">📍 Pickup Locations Weather</h4>
-          <div class="weather-grid" style="grid-template-columns: repeat(auto-fit, minmax(${isExpanded ? '140px' : '120px'}, 1fr)); gap: 0.75rem;">
-            ${displayLocations.map(([key, data]) => {
-              return `
-                <div class="weather-item" style="position: relative;">
-                  ${data.priority === 'high' ? '<div style="position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; background: var(--warning); border-radius: 50%;"></div>' : ''}
-                  <div class="weather-icon">${data.icon}</div>
-                  <div class="weather-time" style="font-weight: 600; color: var(--text-primary);">${data.name.replace(' MRT', '')}</div>
-                  <div class="weather-temp">${data.temp}°</div>
-                  <div class="weather-desc">${data.condition}</div>
-                  ${userPrefs.display === 'detailed' ? `<div style="font-size: 0.6rem; color: var(--text-muted); margin-top: 0.25rem;">${data.humidity}% humidity</div>` : ''}
+    <div class="container">
+        <!-- Controls Section -->
+        <div class="controls">
+            <h3>📊 Monitoring Controls</h3>
+            <div class="control-grid">
+                <div class="control-group">
+                    <label>Time Priority</label>
+                    <select id="timePriority">
+                        <option value="auto">Auto (Current Time)</option>
+                        <option value="morning">Morning Rush</option>
+                        <option value="evening">Evening Rush</option>
+                        <option value="all">All Day</option>
+                    </select>
                 </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      `;
-
-      // Add expressway weather for expanded view
-      if (isExpanded) {
-        weatherHTML += `
-          <div class="weather-section" style="margin-top: 1.5rem;">
-            <h4 style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px;">🛣️ Expressway Corridor Conditions</h4>
-            <div class="expressway-weather">
-              ${Object.entries(expresswayWeather).map(([key, data]) => `
-                <div class="traffic-item" style="padding: 0.75rem;">
-                  <div class="traffic-info">
-                    <div style="font-size: 1.5rem; margin-right: 0.5rem;">${data.icon}</div>
-                    <div class="traffic-details">
-                      <h4 style="margin-bottom: 0.25rem;">${data.name}</h4>
-                      <p style="font-size: 0.75rem; color: var(--text-secondary);">
-                        Covers: ${data.zones.map(zone => locationWeather[zone]?.name.replace(' MRT', '')).join(', ')}
-                      </p>
-                    </div>
-                  </div>
-                  <div class="traffic-stats">
-                    <div class="eta-time" style="font-size: 1rem;">${data.avgTemp}°C</div>
-                    <div class="traffic-speed" style="font-size: 0.75rem;">
-                      <span style="color: ${data.impact === 'High' ? 'var(--danger)' : 'var(--success)'};">
-                        ${data.impact} Impact
-                      </span>
-                    </div>
-                  </div>
+                <div class="control-group">
+                    <label>Route Filter</label>
+                    <select id="routeFilter">
+                        <option value="all">All Routes</option>
+                        <option value="inbound">Inbound (To CBP)</option>
+                        <option value="outbound">Outbound (From CBP)</option>
+                        <option value="express">Express Routes</option>
+                    </select>
                 </div>
-              `).join('')}
+                <div class="control-group">
+                    <label>Update Frequency</label>
+                    <select id="updateFreq">
+                        <option value="300000">5 Minutes</option>
+                        <option value="120000">2 Minutes</option>
+                        <option value="60000">1 Minute</option>
+                        <option value="30000">30 Seconds</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Actions</label>
+                    <button onclick="refreshAllData()">🔄 Refresh Data</button>
+                </div>
             </div>
-          </div>
-        `;
-      }
+        </div>
 
-      container.innerHTML = weatherHTML;
-    }
-
-    function renderTraffic(trafficData) {
-      const container = document.getElementById('trafficContent');
-      const badge = document.getElementById('trafficBadge');
-      const isExpanded = expandedCards.has('traffic');
-      
-      if (!trafficData || !trafficData.corridors) {
-        container.innerHTML = '<div class="loading">No traffic data available</div>';
-        return;
-      }
-
-      let corridors = Object.entries(trafficData.corridors);
-      
-      // Apply route filter
-      if (userPrefs.routeFilter !== 'all') {
-        corridors = corridors.filter(([name]) => {
-          const routeName = name.toLowerCase();
-          switch (userPrefs.routeFilter) {
-            case 'mrt':
-              return routeName.includes('mrt') || routeName.includes('station');
-            case 'residential':
-              return routeName.includes('punggol') || routeName.includes('sengkang') || routeName.includes('hougang');
-            case 'commercial':
-              return routeName.includes('marina') || routeName.includes('raffles') || routeName.includes('orchard');
-            case 'express':
-              return routeName.includes('express') || routeName.includes('direct');
-            default:
-              return true;
-          }
-        });
-      }
-
-      const maxItems = isExpanded ? (userPrefs.display === 'detailed' ? 12 : 8) : 
-                     (userPrefs.display === 'compact' ? 3 : 4);
-      corridors = corridors.slice(0, maxItems);
-
-      let overallStatus = 'smooth';
-      let heavyCount = 0;
-
-      const trafficHTML = corridors.map(([name, data]) => {
-        const level = data.level || 'unknown';
-        const speed = data.speed ? `${data.speed} km/h` : '--';
-        const eta = data.etaToCbpMin ? `${data.etaToCbpMin} min` : '--';
-        const direction = data.direction || '';
-        
-        if (level === 'heavy' || level === 'jam') heavyCount++;
-        if (level === 'heavy' && overallStatus === 'smooth') overallStatus = 'moderate';
-        if (level === 'jam') overallStatus = 'heavy';
-
-        return `
-          <div class="traffic-item">
-            <div class="traffic-info">
-              <div class="traffic-indicator ${level}"></div>
-              <div class="traffic-details">
-                <h4>${name}</h4>
-                <p>${data.expressway || ''} ${direction}</p>
-                ${userPrefs.display === 'detailed' && data.pickupPoints ? `<p style="margin-top: 0.25rem; font-size: 0.75rem;">Pickup: ${Array.isArray(data.pickupPoints) ? data.pickupPoints.join(', ') : data.pickupPoints}</p>` : ''}
-              </div>
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Active Schedule -->
+            <div class="card full-width">
+                <h3>🕐 Complete Schedule Overview</h3>
+                <div class="schedule-filters">
+                    <button class="filter-btn active" data-filter="all">All Routes</button>
+                    <button class="filter-btn" data-filter="inbound">To CBP</button>
+                    <button class="filter-btn" data-filter="outbound">From CBP</button>
+                    <button class="filter-btn" data-filter="morning">Morning</button>
+                    <button class="filter-btn" data-filter="evening">Evening</button>
+                </div>
+                <div id="scheduleContent" class="route-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading complete schedule data...
+                    </div>
+                </div>
             </div>
-            <div class="traffic-stats">
-              <div class="eta-time">${eta}</div>
-              <div class="traffic-speed">${speed}</div>
+
+            <!-- Weather Impact -->
+            <div class="card">
+                <h3>🌤️ Weather Overview</h3>
+                <div id="weatherContent" class="weather-grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Fetching weather data...
+                    </div>
+                </div>
             </div>
-          </div>
-        `;
-      }).join('');
 
-      // Update badge based on overall traffic
-      if (heavyCount === 0) {
-        badge.className = 'card-badge badge-active';
-        badge.textContent = 'Smooth';
-      } else if (heavyCount <= 2) {
-        badge.className = 'card-badge badge-warning';
-        badge.textContent = 'Moderate';
-      } else {
-        badge.className = 'card-badge badge-warning';
-        badge.textContent = 'Heavy';
-      }
-
-      container.innerHTML = trafficHTML;
-      updateTrafficChart(corridors);
-    }
-
-    function renderAlerts(alertsData) {
-      const container = document.getElementById('alertsContent');
-      const badge = document.getElementById('alertsBadge');
-      const isExpanded = expandedCards.has('alerts');
-      
-      if (!alertsData || alertsData.length === 0) {
-        container.innerHTML = `
-          <div class="alert-item">
-            <div class="alert-icon low">
-              <i class="fas fa-check-circle"></i>
+            <!-- Traffic Intelligence -->
+            <div class="card">
+                <h3>🚗 Traffic Intelligence</h3>
+                <div id="trafficContent" class="traffic-sections">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Analyzing traffic patterns...
+                    </div>
+                </div>
             </div>
-            <div class="alert-content">
-              <div class="alert-title">All Systems Normal</div>
-              <div class="alert-message">No active alerts. All transportation systems operating smoothly.</div>
-              <div class="alert-time">System status verified</div>
+        </div>
+
+        <!-- Smart Alerts -->
+        <div class="card">
+            <h3>🚨 Smart Alerts</h3>
+            <div id="alertsContent" class="alerts-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading alert systems...
+                </div>
             </div>
-          </div>
-        `;
-        badge.className = 'card-badge badge-active';
-        badge.textContent = 'Normal';
-        return;
-      }
+        </div>
+    </div>
 
-      const maxAlerts = isExpanded ? (userPrefs.display === 'detailed' ? 8 : 6) : 3;
-      const alerts = alertsData.slice(0, maxAlerts);
-      let highPriorityCount = 0;
+    <script>
+        // Configuration
+        const API_BASE = 'https://cbp-ops-api.o-shanneng.workers.dev';
+        let updateInterval;
+        let allRoutes = [];
+        let currentFilter = 'all';
 
-      const alertsHTML = alerts.map(alert => {
-        const priority = (alert.priority || 'low').toLowerCase();
-        const time = alert.time ? new Date(alert.time).toLocaleTimeString() : 'Recent';
-        const icon = priority === 'high' ? 'fas fa-exclamation-triangle' : 
-                    priority === 'medium' ? 'fas fa-exclamation-circle' : 
-                    'fas fa-info-circle';
-        
-        if (priority === 'high') highPriorityCount++;
-
-        return `
-          <div class="alert-item">
-            <div class="alert-icon ${priority}">
-              <i class="${icon}"></i>
-            </div>
-            <div class="alert-content">
-              <div class="alert-title">${alert.title || 'System Alert'}</div>
-              <div class="alert-message">${alert.message}</div>
-              <div class="alert-time">${time}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      badge.className = highPriorityCount > 0 ? 'card-badge badge-warning' : 'card-badge badge-active';
-      badge.textContent = `${alerts.length} Alert${alerts.length > 1 ? 's' : ''}`;
-
-      container.innerHTML = alertsHTML;
-    }
-
-    function updateTrafficChart(corridorData) {
-      const ctx = document.getElementById('trafficChart').getContext('2d');
-      
-      if (trafficChart) {
-        trafficChart.destroy();
-      }
-
-      const labels = corridorData.map(([name]) => name.substring(0, 20));
-      const speeds = corridorData.map(([, data]) => data.speed || 0);
-      const etas = corridorData.map(([, data]) => data.etaToCbpMin || 0);
-
-      trafficChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Speed (km/h)',
-            data: speeds,
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            tension: 0.4,
-            yAxisID: 'y'
-          }, {
-            label: 'ETA (minutes)',
-            data: etas,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            tension: 0.4,
-            yAxisID: 'y1'
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              labels: {
-                color: '#94a3b8',
-                usePointStyle: true
-              }
-            }
-          },
-          scales: {
-            x: {
-              ticks: { color: '#64748b' },
-              grid: { color: '#334155' }
-            },
-            y: {
-              type: 'linear',
-              display: true,
-              position: 'left',
-              ticks: { color: '#64748b' },
-              grid: { color: '#334155' }
-            },
-            y1: {
-              type: 'linear',
-              display: true,
-              position: 'right',
-              ticks: { color: '#64748b' },
-              grid: { drawOnChartArea: false }
-            }
-          }
-        }
-      });
-    }
-
-    function renderAllData() {
-      const timeInfo = getCurrentTimeInfo();
-      
-      if (currentData.traffic) {
-        renderTraffic(currentData.traffic);
-      }
-
-      // Use actual schedule data if available
-      if (currentData.schedule) {
-        renderSchedule(currentData.schedule, timeInfo);
-      } else {
-        renderSchedule({routes: []}, timeInfo); // Empty schedule data
-      }
-
-      if (currentData.weather) {
-        renderWeather(currentData.weather);
-      }
-
-      if (currentData.alerts) {
-        renderAlerts(currentData.alerts);
-      }
-    }
-
-    // Enhanced Main Data Loading Function with better error handling
-    async function loadDashboardData() {
-      const timeInfo = getCurrentTimeInfo();
-      debugInfo.lastUpdate = new Date().toISOString();
-      
-      try {
-        showToast('Refreshing dashboard data...', 'info');
-        addDebugInfo('load', 'Starting dashboard data load');
-        
-        // Update system status
-        document.getElementById('systemDot').className = 'status-dot warning';
-        
-        // Test API connectivity first
-        const isApiWorking = await testApiConnectivity();
-        if (!isApiWorking) {
-          showToast('API connection issues detected', 'warning');
-        }
-        
-        // Load all data in parallel with individual error handling
-        const promises = [
-          fetchJson('/status').catch(e => ({ error: e, endpoint: '/status' })),
-          fetchJson('/traffic/corridors').catch(e => ({ error: e, endpoint: '/traffic/corridors' })),
-          fetchJson('/forecast/locations').catch(e => ({ error: e, endpoint: '/forecast/locations' })),
-          fetchJson('/alerts').catch(e => ({ error: e, endpoint: '/alerts' })),
-          fetchJson('/schedule').catch(e => ({ error: e, endpoint: '/schedule' }))
-        ];
-        
-        const [statusData, trafficData, weatherData, alertsData, scheduleData] = await Promise.all(promises);
-
-        // Count successful loads
-        const results = [statusData, trafficData, weatherData, alertsData, scheduleData];
-        const successCount = results.filter(result => !result.error).length;
-        
-        addDebugInfo('load', `Loaded ${successCount}/5 endpoints successfully`);
-        
-        if (successCount >= 2) { // More lenient - need at least 2 working endpoints
-          document.getElementById('systemDot').className = 'status-dot';
-          showToast('Dashboard updated successfully', 'success');
-        } else {
-          document.getElementById('systemDot').className = 'status-dot warning';
-          showToast(`Only ${successCount}/5 data sources loaded`, 'warning');
-        }
-
-        // Store current data, handling errors
-        currentData = {
-          status: statusData.error ? null : statusData,
-          traffic: trafficData.error ? null : trafficData,
-          weather: weatherData.error ? null : weatherData,
-          alerts: alertsData.error ? null : alertsData,
-          schedule: scheduleData.error ? null : scheduleData
-        };
-
-        // Log any errors
-        results.forEach(result => {
-          if (result.error) {
-            addError(result.error, result.endpoint);
-          }
+        // Initialize Dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+            refreshAllData();
+            setupAutoUpdate();
         });
 
-        // Render all data
-        renderAllData();
+        function initializeEventListeners() {
+            // Schedule filters
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentFilter = this.dataset.filter;
+                    filterAndDisplayRoutes();
+                });
+            });
 
-      } catch (error) {
-        console.error('Dashboard load error:', error);
-        addError(error, 'loadDashboardData');
-        showToast('Failed to load dashboard data', 'error');
-        document.getElementById('systemDot').className = 'status-dot danger';
-      }
-    }
+            // Control changes
+            document.getElementById('updateFreq').addEventListener('change', function() {
+                setupAutoUpdate();
+            });
 
-    // Initialize Dashboard
-    function initializeDashboard() {
-      // Initialize controls
-      initializeControls();
-      
-      // Update time immediately and then every minute
-      updateTimeDisplay();
-      setInterval(updateTimeDisplay, 60000);
+            document.getElementById('routeFilter').addEventListener('change', function() {
+                currentFilter = this.value;
+                filterAndDisplayRoutes();
+            });
+        }
 
-      // Initialize debug panel
-      updateDebugPanel();
+        function setupAutoUpdate() {
+            if (updateInterval) clearInterval(updateInterval);
+            const frequency = parseInt(document.getElementById('updateFreq').value);
+            updateInterval = setInterval(refreshAllData, frequency);
+        }
 
-      // Load initial data
-      loadDashboardData();
+        async function refreshAllData() {
+            console.log('🔄 Refreshing all data...');
+            
+            // Update status dots to loading
+            document.querySelectorAll('.status-dot').forEach(dot => {
+                dot.style.background = '#ffc107';
+                dot.style.boxShadow = '0 0 8px rgba(255, 193, 7, 0.6)';
+            });
 
-      // Set up auto-refresh
-      refreshTimer = setInterval(loadDashboardData, REFRESH_INTERVAL);
+            try {
+                await Promise.all([
+                    loadCompleteSchedule(),
+                    loadWeatherForecast(),
+                    loadTrafficIntelligence(),
+                    loadSmartAlerts()
+                ]);
+                
+                // Success - green dots
+                document.querySelectorAll('.status-dot').forEach(dot => {
+                    dot.style.background = '#28a745';
+                    dot.style.boxShadow = '0 0 8px rgba(40, 167, 69, 0.6)';
+                });
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                // Error - red dots
+                document.querySelectorAll('.status-dot').forEach(dot => {
+                    dot.style.background = '#dc3545';
+                    dot.style.boxShadow = '0 0 8px rgba(220, 53, 69, 0.6)';
+                });
+            }
+        }
 
-      // Manual refresh button
-      document.getElementById('refreshBtn').addEventListener('click', () => {
-        addDebugInfo('user-action', 'Manual refresh triggered');
-        loadDashboardData();
-      });
+        async function loadCompleteSchedule() {
+            try {
+                const response = await fetch(`${API_BASE}/schedule`);
+                const data = await response.json();
+                
+                if (data.routes && Array.isArray(data.routes)) {
+                    allRoutes = data.routes;
+                    filterAndDisplayRoutes();
+                } else {
+                    throw new Error('Invalid schedule data format');
+                }
+            } catch (error) {
+                console.error('Error loading schedule:', error);
+                document.getElementById('scheduleContent').innerHTML = 
+                    '<div class="loading">❌ Failed to load schedule data</div>';
+            }
+        }
 
-      console.log('CBP Smart Operations Hub initialized with enhanced debugging');
-      addDebugInfo('init', 'Dashboard initialized successfully');
-    }
+        function filterAndDisplayRoutes() {
+            let filteredRoutes = allRoutes;
 
-    // Start the dashboard when page loads
-    document.addEventListener('DOMContentLoaded', initializeDashboard);
+            // Apply filters
+            switch (currentFilter) {
+                case 'inbound':
+                    filteredRoutes = allRoutes.filter(r => r.direction === 'inbound');
+                    break;
+                case 'outbound':
+                    filteredRoutes = allRoutes.filter(r => r.direction === 'outbound');
+                    break;
+                case 'morning':
+                    filteredRoutes = allRoutes.filter(r => {
+                        const hour = parseInt(r.time.split(':')[0]);
+                        return hour >= 7 && hour <= 10;
+                    });
+                    break;
+                case 'evening':
+                    filteredRoutes = allRoutes.filter(r => {
+                        const hour = parseInt(r.time.split(':')[0]);
+                        return hour >= 17 && hour <= 20;
+                    });
+                    break;
+                default:
+                    // Show all routes
+                    break;
+            }
 
-    // Add global error handler
-    window.addEventListener('error', (e) => {
-      addError(e.error || new Error(e.message), 'Global error handler');
-    });
+            displayRoutes(filteredRoutes);
+        }
 
-    window.addEventListener('unhandledrejection', (e) => {
-      addError(e.reason, 'Unhandled promise rejection');
-    });
-  </script>
+        function displayRoutes(routes) {
+            const container = document.getElementById('scheduleContent');
+            
+            if (!routes || routes.length === 0) {
+                container.innerHTML = '<div class="loading">📭 No routes match the current filter</div>';
+                return;
+            }
+
+            const routeCards = routes.map(route => {
+                const directionClass = route.direction === 'inbound' ? 'inbound' : 'outbound';
+                const directionTag = route.direction === 'inbound' ? 'inbound-tag' : 'outbound-tag';
+                const directionText = route.direction === 'inbound' ? '➡️ To CBP' : '⬅️ From CBP';
+                
+                return `
+                    <div class="route-card ${directionClass}">
+                        <div class="route-time">${route.time}</div>
+                        <div class="route-details"><strong>${route.name}</strong></div>
+                        <div class="route-details">
+                            <strong>Corridor:</strong> ${route.corridor || 'N/A'}
+                        </div>
+                        <div class="route-details">
+                            <strong>ETA:</strong> ${route.etaToCbpMin || 0} minutes
+                        </div>
+                        <span class="route-direction ${directionTag}">${directionText}</span>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = routeCards;
+        }
+
+        async function loadWeatherForecast() {
+            try {
+                const response = await fetch(`${API_BASE}/forecast/locations`);
+                const data = await response.json();
+                
+                if (data.locations) {
+                    displayWeatherForecast(data.locations);
+                } else {
+                    throw new Error('Invalid weather data format');
+                }
+            } catch (error) {
+                console.error('Error loading weather:', error);
+                document.getElementById('weatherContent').innerHTML = 
+                    '<div class="loading">❌ Failed to load weather data</div>';
+            }
+        }
+
+        function displayWeatherForecast(locations) {
+            const container = document.getElementById('weatherContent');
+            
+            const weatherCards = Object.entries(locations).map(([key, location]) => {
+                const current = location.current || {};
+                const hourly = location.hourly || [];
+                
+                // Get forecasts for 2-hour blocks: +2h, +4h, +6h, +8h
+                const twoHourForecasts = [];
+                const now = new Date();
+                
+                // Find forecasts closest to 2, 4, 6, 8 hours from now
+                for (let hours of [2, 4, 6, 8]) {
+                    const targetTime = new Date(now.getTime() + (hours * 60 * 60 * 1000));
+                    
+                    // Find the forecast closest to this target time
+                    let closestForecast = null;
+                    let minDiff = Infinity;
+                    
+                    for (const forecast of hourly) {
+                        if (forecast.time) {
+                            const forecastTime = new Date(forecast.time);
+                            const diff = Math.abs(forecastTime.getTime() - targetTime.getTime());
+                            if (diff < minDiff) {
+                                minDiff = diff;
+                                closestForecast = { ...forecast, targetHours: hours };
+                            }
+                        }
+                    }
+                    
+                    if (closestForecast) {
+                        twoHourForecasts.push(closestForecast);
+                    }
+                }
+                
+                // Format the 2-hour block forecasts
+                const hourlyForecasts = twoHourForecasts.map(hour => {
+                    return `
+                        <div class="forecast-hour">
+                            <div class="forecast-time">+${hour.targetHours}h</div>
+                            <div class="forecast-icon">${hour.icon || '🌤️'}</div>
+                            <div class="forecast-temp">${hour.temp || 0}°C</div>
+                        </div>
+                    `;
+                }).join('');
+                
+                return `
+                    <div class="weather-location">
+                        <h4>${location.name || key}</h4>
+                        
+                        <div class="weather-current">
+                            <div class="current-display">
+                                <span class="weather-icon">${current.icon || '🌤️'}</span>
+                                <span class="current-temp">${current.temp || 0}°C</span>
+                            </div>
+                            <div class="current-desc">${current.description || 'Current conditions'}</div>
+                        </div>
+                        
+                        <div class="forecast-header">Next 8 Hours (2-hour blocks)</div>
+                        <div class="hourly-forecast">
+                            ${hourlyForecasts || '<div style="grid-column: 1/-1; text-align: center; color: #666;">No forecast data</div>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = weatherCards || '<div class="loading">📭 No weather data available</div>';
+        }
+
+        async function loadTrafficIntelligence() {
+            try {
+                const response = await fetch(`${API_BASE}/traffic/corridors`);
+                const data = await response.json();
+                
+                if (data.corridors) {
+                    displayTrafficIntelligence(data.corridors);
+                } else {
+                    throw new Error('Invalid traffic data format');
+                }
+            } catch (error) {
+                console.error('Error loading traffic:', error);
+                document.getElementById('trafficContent').innerHTML = 
+                    '<div class="loading">❌ Failed to load traffic data</div>';
+            }
+        }
+
+        function displayTrafficIntelligence(corridors) {
+            const container = document.getElementById('trafficContent');
+            
+            // Separate corridors based on their names (correct logic)
+            const inboundCorridors = [];
+            const outboundCorridors = [];
+            
+            Object.entries(corridors).forEach(([name, corridor]) => {
+                if (name.includes('(To CBP)')) {
+                    inboundCorridors.push({ name, ...corridor });
+                } else if (name.includes('(From CBP)')) {
+                    outboundCorridors.push({ name, ...corridor });
+                }
+            });
+            
+            function createCorridorHTML(corridorList, title, sectionClass) {
+                const corridorItems = corridorList.map(corridor => {
+                    const speedClass = getSpeedClass(corridor.speed);
+                    const cleanName = corridor.name.replace(' (To CBP)', '').replace(' (From CBP)', '');
+                    
+                    return `
+                        <div class="corridor-item">
+                            <div class="corridor-info">
+                                <div class="corridor-name">${cleanName}</div>
+                                <div class="corridor-details">
+                                    ${corridor.expressway} • ${corridor.description || 'Traffic conditions'}
+                                </div>
+                            </div>
+                            <div class="corridor-speed ${speedClass}">
+                                ${corridor.speed || 0} km/h
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                return `
+                    <div class="traffic-section ${sectionClass}">
+                        <h4>${title}</h4>
+                        ${corridorItems || '<div style="text-align: center; color: #666; padding: 1rem;">No data available</div>'}
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = 
+                createCorridorHTML(inboundCorridors, '➡️ To CBP (Inbound)', 'inbound-section') +
+                createCorridorHTML(outboundCorridors, '⬅️ From CBP (Outbound)', 'outbound-section');
+        }
+
+        function getSpeedClass(speed) {
+            if (speed < 20) return 'speed-jam';
+            if (speed < 35) return 'speed-heavy';
+            if (speed < 50) return 'speed-moderate';
+            return 'speed-smooth';
+        }
+
+        async function loadSmartAlerts() {
+            try {
+                const response = await fetch(`${API_BASE}/alerts`);
+                const alerts = await response.json();
+                
+                if (Array.isArray(alerts)) {
+                    displaySmartAlerts(alerts);
+                } else {
+                    throw new Error('Invalid alerts data format');
+                }
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+                document.getElementById('alertsContent').innerHTML = 
+                    '<div class="loading">❌ Failed to load alerts</div>';
+            }
+        }
+
+        function displaySmartAlerts(alerts) {
+            const container = document.getElementById('alertsContent');
+            
+            if (!alerts || alerts.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-low">
+                        <span class="alert-icon">✅</span>
+                        <div class="alert-content">
+                            <div class="alert-message">All systems operating normally</div>
+                            <div class="alert-time">No active alerts</div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const alertItems = alerts.map(alert => {
+                const alertClass = `alert-${alert.priority || 'low'}`;
+                const icon = alert.priority === 'high' ? '🚨' : 
+                           alert.priority === 'medium' ? '⚠️' : 'ℹ️';
+                
+                return `
+                    <div class="alert ${alertClass}">
+                        <span class="alert-icon">${icon}</span>
+                        <div class="alert-content">
+                            <div class="alert-message">
+                                <strong>${alert.type || 'System'}:</strong> ${alert.message}
+                            </div>
+                            <div class="alert-time">
+                                ${new Date(alert.time).toLocaleString('en-SG')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = alertItems;
+        }
+
+        // Global refresh function
+        window.refreshAllData = refreshAllData;
+    </script>
 </body>
 </html>
